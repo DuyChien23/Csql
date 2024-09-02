@@ -2,15 +2,11 @@
 // Created by chiendd on 22/07/2024.
 //
 
-#include <fstream>
 #include <iostream>
 
+#include "core/view/table_view.h"
 
-void input() {
-    std::fstream outfile ("test.txt", std::fstream::in | std::fstream::out | std::fstream::trunc);
-    outfile << "fuck you" << std::endl;
-}
 int main() {
-     input();
-     //output();
+     TableView table_view("abc", "def");
+     table_view.show(std::cerr);
 }
