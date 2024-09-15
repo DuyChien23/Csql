@@ -45,10 +45,9 @@ namespace Csql {
         void save();
 
         uint32_t getHeaderSize();
-        uint32_t getTupleSize(const Tuple& aTuple);
         uint32_t getFreeSpace();
         Tuple* readTuple(uint32_t iSlot);
-        void writeTuple(const Tuple& aTuple);
+        void writeTuple(uint32_t iSlot);
         bool addTuple(const Tuple& aTuple);
 
 

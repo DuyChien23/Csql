@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 namespace Csql {
-    void Storage::writePage(SharedPagePtr aPage) {
+    void Storage::writePage(SharedPagePtr& aPage) {
         aPage->save();
         SharedPagePtr needWritingPage = aPage;
         if (Configs::cacheMaxSize) {
@@ -17,13 +17,13 @@ namespace Csql {
         writePageUncache(needWritingPage);
     }
 
-    void Storage::writePageUncache(SharedPagePtr aPage) {
+    void Storage::writePageUncache(SharedPagePtr& aPage) {
         std::fstream &f = getFstream(aPage->get_the_entity()->getName());
         f.seekg(aPage->get_page_index() * Configs::storageUnitSize);
         aPage->encode(f);
     }
 
-    void Storage::readPage(const std::string &entityName, uint32_t pageIndex, SharedPagePtr aPage) {
+    void Storage::readPage(const std::string &entityName, uint32_t pageIndex, SharedPagePtr& aPage) {
         std::string theKey = createKey(entityName, pageIndex);
         if (pageCache->contains(theKey)) {
             aPage = pageCache->get(theKey);
@@ -37,7 +37,7 @@ namespace Csql {
         aPage->refresh();
     }
 
-    void Storage::readPageUncache(const std::string &entityName, uint32_t pageIndex, SharedPagePtr aPage) {
+    void Storage::readPageUncache(const std::string &entityName, uint32_t pageIndex, SharedPagePtr& aPage) {
         std::fstream &f = getFstream(entityName);
         f.seekg(pageIndex * Configs::storageUnitSize);
         aPage = std::make_shared<SlottedPage>(pageIndex, getEntity(entityName));
@@ -91,5 +91,19 @@ namespace Csql {
             readPage(entityName, index, thePage);
             pageVisitor(thePage);
         }
+
     }
+
+    void Storage::eachTuple(const std::string &entityName, const TupleVisitor &tupleVisitor, bool isUpdate) {
+        eachDataPage(entityName, [&](SharedPagePtr aPage) {
+            for (auto& aTuple : aPage->get_tuples()) {
+                tupleVisitor(aTuple);
+            }
+
+            if (isUpdate) {
+                writePage(aPage);
+            }
+        });
+    }
+
 }

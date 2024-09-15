@@ -8,6 +8,7 @@
 #include <string>
 
 #include "entity.h"
+#include "sql_query.h"
 #include "storage.h"
 
 namespace Csql {
@@ -23,13 +24,14 @@ namespace Csql {
         void describeTable(std::ostream& anOutput, std::string aEntityName);
         void dropTable(std::ostream& anOutput, std::string aEntityName);
         void insert(std::ostream& anOutput, std::string aEntityName, const Tuple &aTuple);
+        void select(std::ostream& anOutput, SQLQueryPtr& aSelectQuery);
 
     protected:
         std::string name;
 
     private:
-        void validateCreateTable(SharedEntityPtr& anEntityPtr);
-        void validateInsert(SharedEntityPtr& theEntity, const Tuple &aTuple);
+        void validateCreateTable(const SharedEntityPtr& anEntityPtr);
+        bool validateInsert(std::ostream &anOutput, const SharedEntityPtr& theEntity, const Tuple &aTuple);
         void validateTableExisted(std::string aEntityName);
         void validateTableNotExisted(std::string aEntityName);
     };

@@ -27,7 +27,7 @@ namespace Csql {
 
             void addAttribute(Attribute *attribute);
 
-            Attribute* getAttribute(std::string name);
+            Attribute* getAttribute(const std::string& name);
 
             AttributeList* getAttributes();
 
@@ -61,6 +61,7 @@ namespace Csql {
             Attribute* readAttribute();
             void writeAttribute(Attribute *anAttribute);
 
+            Tuple baseNullTuple();
             void eachAttribute(const AttributeVisitor &attributeVisitor);
 
         protected:

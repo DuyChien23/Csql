@@ -4,7 +4,10 @@
 
 #include "slotted_page.h"
 
+#include <assert.h>
+
 #include "../../util/configs.h"
+#include "../../util/helpers.h"
 
 namespace Csql {
     void SlottedPage::refresh() {
@@ -20,6 +23,10 @@ namespace Csql {
         for (int i = 0; i < this->numSlots; ++i) {
             read(this->slots[i]);
         }
+
+        for (int i = 0; i < this->numSlots; ++i) {
+            tuples[i] = *readTuple(i);
+        }
     }
 
     void SlottedPage::save() {
@@ -33,8 +40,8 @@ namespace Csql {
             write(slot);
         }
 
-        for (auto tuple : this->tuples) {
-            write(tuple);
+        for (int i = 0; i < this->numSlots; ++i) {
+            writeTuple(i);
         }
     }
 
@@ -45,24 +52,6 @@ namespace Csql {
             + sizeof(this->numSlots);
     }
 
-    uint32_t SlottedPage::getTupleSize(const Tuple& aTuple) {
-        uint32_t countSize = 0;
-        for (auto &element : aTuple) {
-            if (!theEntity->getAttribute(element.first)) {
-                continue;
-            }
-
-            countSize += sizeof (uint32_t);
-            countSize += sizeof element.first;
-            countSize += sizeof element.second;
-
-            if (theEntity->getAttribute(element.first)->getType() == DataTypes::varchar_type) {
-                countSize += sizeof (uint32_t);
-            }
-        }
-        return countSize;
-    }
-
     uint32_t SlottedPage::getFreeSpace() {
         return (numSlots ? endFreeSpace - beginFreeSpace : Configs::storageUnitSize - getHeaderSize());
     }
@@ -70,7 +59,7 @@ namespace Csql {
 
     Tuple *SlottedPage::readTuple(uint32_t iSlot) {
         bufferOffset = slots.at(iSlot);
-        uint32_t endOffset = (iSlot + 1 == numSlots ? Configs::storageUnitSize : slots.at(iSlot + 1));
+        uint32_t endOffset = (iSlot == 0 ? Configs::storageUnitSize : slots.at(iSlot - 1));
 
         Tuple *theTuple = new std::map<std::string, SqlTypes>;
         for (; bufferOffset < endOffset;) {
@@ -78,23 +67,24 @@ namespace Csql {
             read(name);
             SqlTypes aValue;
             read(aValue, theEntity->getAttribute(name)->getType());
-            theTuple->at(name) = aValue;
+            theTuple->insert(std::make_pair(name, aValue));
         }
 
         return theTuple;
     }
 
-    void SlottedPage::writeTuple(const Tuple &aTuple) {
+    void SlottedPage::writeTuple(uint32_t iSlot) {
+        bufferOffset = slots.at(iSlot);
         for (auto &attribute : *theEntity->getAttributes()) {
-            if (aTuple.contains(attribute->getName())) {
+            if (tuples[iSlot].contains(attribute->getName())) {
                 write(attribute->getName());
-                write(aTuple.at(attribute->getName()));
+                write(tuples[iSlot].at(attribute->getName()), attribute->getType());
             }
         }
     }
 
     bool SlottedPage::addTuple(const Tuple &aTuple) {
-        uint32_t sz = this->getTupleSize(aTuple);
+        uint32_t sz = Helpers::SqlTypeHandle::sizeOfTuple(aTuple);
         if (this->getFreeSpace() < sz + sizeof(uint32_t)) return false;
         beginFreeSpace += sizeof(uint32_t);
         endFreeSpace -= sz;

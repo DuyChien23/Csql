@@ -6,6 +6,7 @@
 
 #include "../src/core/storage/entity.h"
 #include "../src/core/storage/page/slotted_page.h"
+#include "../src/core/util/helpers.h"
 
 using namespace Csql;
 
@@ -116,15 +117,23 @@ TEST(PAGE_TEST, SAVE_REFRESH_SLOTTED_PAGE) {
         std::make_pair("score", SqlFloatType(57.5)),
     };
 
-    slots[0] = Configs::storageUnitSize - slotted_page.getTupleSize(tuples[0]);
-    slots[1] = slots[0] - slotted_page.getTupleSize(tuples[1]);
-    slots[2] = slots[1] - slotted_page.getTupleSize(tuples[2]);
+    slots[0] = Configs::storageUnitSize - Helpers::SqlTypeHandle::sizeOfTuple(tuples[0]);
+    slots[1] = slots[0] - Helpers::SqlTypeHandle::sizeOfTuple(tuples[1]);
+    slots[2] = slots[1] - Helpers::SqlTypeHandle::sizeOfTuple(tuples[2]);
 
     slotted_page.addTuple(tuples[0]);
     slotted_page.addTuple(tuples[1]);
     slotted_page.addTuple(tuples[2]);
 
     slotted_page.save();
+
+    slotted_page.set_tuples(std::vector<Tuple>(0));
+    slotted_page.set_slots(std::vector<uint32_t>(0));
+    slotted_page.set_begin_free_space(0);
+    slotted_page.set_end_free_space(0);
+    slotted_page.set_next_page(0);
+    slotted_page.set_num_slots(0);
+
     slotted_page.refresh();
 
     EXPECT_EQ(slotted_page.get_next_page(), nextPage);
@@ -138,4 +147,34 @@ TEST(PAGE_TEST, SAVE_REFRESH_SLOTTED_PAGE) {
                 tuples.at(i).at(attribute->getName()));
         }
     }
+}
+
+TEST(PAGE_TEST, TEST_READ_WRITE_TUPLE) {
+    uint64_t firstDataBlock = 7;
+    uint64_t firstFreeBlock = 10;
+    AttributeList attributes;
+
+    attributes.push_back((new Attribute)->setName("id")->setType(DataTypes::int_type));
+    attributes.push_back((new Attribute)->setName("name")->setType(DataTypes::varchar_type));
+    attributes.push_back((new Attribute)->setName("date")->setType(DataTypes::datetime_type));
+    attributes.push_back((new Attribute)->setName("isOk")->setType(DataTypes::bool_type));
+    attributes.push_back((new Attribute)->setName("score")->setType(DataTypes::float_type));
+
+    SharedEntityPtr entity_ptr = std::make_shared<Entity>(initStandardEntity(firstDataBlock, firstFreeBlock, attributes));
+
+    Tuple tuple = {
+        std::make_pair("id", SqlIntType(1)),
+        std::make_pair("name", SqlVarcharType("chien")),
+        std::make_pair("date", SqlDatetimeType(30)),
+        std::make_pair("isOk", SqlBoolType(true)),
+        std::make_pair("score", SqlFloatType(1.5)),
+    };
+
+    SlottedPage slotted_page(0, entity_ptr);
+
+    slotted_page.addTuple(tuple);
+
+    slotted_page.writeTuple(0);
+    Tuple* theTuple = slotted_page.readTuple(0);
+    EXPECT_EQ(theTuple->at("id"), tuple.at("id"));
 }

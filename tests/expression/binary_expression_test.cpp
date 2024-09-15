@@ -3,6 +3,7 @@
 //
 
 #include "expression_test.h"
+#include "../../src/core/storage/expression/binary_expression.h"
 
 // Test Fixture
 class BinaryExpressionTest : public ::testing::Test {

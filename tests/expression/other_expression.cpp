@@ -3,6 +3,7 @@
 //
 
 #include "expression_test.h"
+#include "../../src/core/storage/expression/other_expression.h"
 
 class OtherExpressionTest : public ::testing::Test {
 protected:

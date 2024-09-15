@@ -8,11 +8,6 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "../../src/core/storage/expression/arithmetic_expresstion.h"
-#include "../../src/core/storage/expression/attribute_expression.h"
-#include "../../src/core/storage/expression/binary_expression.h"
-#include "../../src/core/storage/expression/other_expression.h"
-
 #include "../../src/core/storage/expression/expression.h"
 
 using namespace Csql;

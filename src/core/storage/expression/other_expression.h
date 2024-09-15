@@ -6,9 +6,9 @@
 #define BETWEEN_EXPRESSION_H
 #include <vector>
 
-#include "binary_expression.h"
 #include "expression.h"
 #include "../../util/errors.h"
+#include "../../util/helpers.h"
 
 namespace Csql {
     enum class OtherOperator {
@@ -27,27 +27,27 @@ namespace Csql {
 
             for (int i = 1; i < list.size(); ++i) {
                 if (list[i].index() != list[i - 1].index()) {
-                    throw Errors(expressionError);
+                    throw Errors("Type of operand invalid");
                 }
             }
 
             if ((op == OtherOperator::between || op == OtherOperator::not_between) && list.size() != 2) {
-                throw Errors(expressionError);
+                throw Errors("Number operand over");
             }
         };
 
         SqlTypes apply(const JoinedTuple &tuple) override {
             SqlTypes v = value->apply(tuple);
-            if (!list.empty() && v.index() != list.begin()->index()) throw Errors(expressionError);
+            if (!list.empty() && v.index() != list.begin()->index()) throw Errors("Type of operand invalid");
 
             if (op == OtherOperator::between || op == OtherOperator::not_between) {
                 return static_cast<SqlBoolType>((op == OtherOperator::not_between) ^
-                    (Helpers::compareSqlType(list[0], v) != SqlTypeCompareResult::greater
-                        && Helpers::compareSqlType(v, list[1]) != SqlTypeCompareResult::greater));
+                    (Helpers::ExpressionHandle::ExpressionHandle::compareSqlType(list[0], v) != SqlTypeCompareResult::greater
+                        && Helpers::ExpressionHandle::compareSqlType(v, list[1]) != SqlTypeCompareResult::greater));
             } else {
                 bool is_in = false;
                 for (auto& element : list) {
-                    if (Helpers::compareSqlType(v, element) == SqlTypeCompareResult::equal) {
+                    if (Helpers::ExpressionHandle::compareSqlType(v, element) == SqlTypeCompareResult::equal) {
                         is_in = true;
                     }
                 }

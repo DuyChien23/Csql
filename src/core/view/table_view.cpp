@@ -6,8 +6,6 @@
 
 #include <iomanip>
 
-#include "timer_view.h"
-
 namespace Csql {
     void TableView::drawRowSeparator(std::ostream &aStream) const {
         aStream << cornerChar;
@@ -41,9 +39,7 @@ namespace Csql {
         }
 
         //Subtract 1 for column headers
-        aStream << theNumRows - 1 << " rows in set";
-
-        TimerView().show(aStream);
+        aStream << theNumRows - 1 << " rows in set\n";
 
         return true;
     }

@@ -11,18 +11,18 @@ namespace Csql {
         anOutput.write(rawData, Configs::storageUnitSize);
         anOutput.flush();
 
-        if (!anOutput.good()) throw Errors(writeError);
+        if (!anOutput.good()) throw Errors("Can't write data to disk");
     }
 
     void IOManager::decode(std::fstream &anInput) {
         anInput.read(rawData, Configs::storageUnitSize);
         refresh();
 
-        if (!anInput.good()) throw Errors(readError);
+        if (!anInput.good()) throw Errors("Can't read data from disk");
     }
 
     void IOManager::write(const std::string &aString) {
-        uint64_t length = aString.size();
+        uint32_t length = aString.size();
         write(length);
         std::memcpy(rawData + bufferOffset, aString.c_str(), length);
         bufferOffset += length;
@@ -61,7 +61,7 @@ namespace Csql {
     }
 
     void IOManager::read(std::string &aString) {
-        uint64_t length;
+        uint32_t length;
         read(length);
         aString = std::string(rawData + bufferOffset, rawData + bufferOffset + length);
         bufferOffset += length;

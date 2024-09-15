@@ -4,8 +4,6 @@
 
 #include "entity.h"
 
-#include <unistd.h>
-
 namespace Csql {
     void Entity::save() {
         bufferOffset = 0;
@@ -108,7 +106,7 @@ namespace Csql {
     }
 
 
-    Attribute* Entity::getAttribute(std::string name) {
+    Attribute* Entity::getAttribute(const std::string& name) {
         for (auto attribute : attributes) {
             if (attribute->getName() == name) {
                 return attribute;
@@ -127,6 +125,15 @@ namespace Csql {
             attributes.push_back(attribute);
         }
     }
+
+    Tuple Entity::baseNullTuple() {
+        Tuple theTuple;
+        for (auto &attribute : attributes) {
+            theTuple.insert(std::make_pair(attribute->getName(), SqlNullType()));
+        }
+        return theTuple;
+    }
+
 
     void Entity::eachAttribute(const AttributeVisitor &attributeVisitor) {
         for (auto attribute : attributes) {

@@ -12,7 +12,9 @@ namespace fs = std::filesystem;
 
 namespace Csql {
     using EntityVisitor = std::function<void(SharedEntityPtr anEntity)>;
-    using PageVisitor = std::function<void(SharedPagePtr aPage)>;
+    using PageVisitor = std::function<void(SharedPagePtr& aPage)>;
+
+    using TupleVisitor = std::function<void(Tuple& tuple)>;
 
     class Storage {
     public:
@@ -80,6 +82,13 @@ namespace Csql {
             return mEntity[entityName];
         }
 
+        void saveEntity(const SharedEntityPtr& theEntity) {
+            std::fstream &f = getFstream(theEntity->getName());
+            f.seekg(0);
+            theEntity->save();
+            theEntity->encode(f);
+        }
+
         std::string createKey(std::string entityName, uint32_t pageIndex) {
             return entityName + '#' + std::to_string(pageIndex);
         }
@@ -88,11 +97,11 @@ namespace Csql {
             return fullPath + "/" + entityName + Configs::entityFileExtension;
         }
 
-        void writePage(SharedPagePtr aPage);
-        void writePageUncache(SharedPagePtr aPage);
+        void writePage(SharedPagePtr &aPage);
+        void writePageUncache(SharedPagePtr &aPage);
 
-        void readPage(const std::string& entityName, uint32_t pageIndex, SharedPagePtr aPage);
-        void readPageUncache(const std::string& entityName, uint32_t pageIndex, SharedPagePtr aPage);
+        void readPage(const std::string& entityName, uint32_t pageIndex, SharedPagePtr &aPage);
+        void readPageUncache(const std::string& entityName, uint32_t pageIndex, SharedPagePtr &aPage);
 
         void deleteEntityFile(std::string entityName);
         void eachEntity(const EntityVisitor& entityVisitor);
@@ -100,6 +109,8 @@ namespace Csql {
         SharedPagePtr popFreePage(const std::string& entityName);
         void pushDataPage(const std::string &entityName, SharedPagePtr aPage);
         void eachDataPage(const std::string& entityName, const PageVisitor& pageVisitor);
+
+        void eachTuple(const std::string& entityName, const TupleVisitor& tupleVisitor, bool isUpdate = false);
     };
 }
 

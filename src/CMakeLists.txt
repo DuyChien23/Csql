@@ -14,6 +14,8 @@ add_executable(Csql main.cpp ${Sources}
         core/storage/expression/binary_expression.h
         core/storage/expression/arithmetic_expresstion.h
         core/storage/expression/other_expression.h
+        core/storage/expression/join_expression.cpp
+        core/storage/expression/join_expression.h
 )
 
 target_link_libraries(Csql PUBLIC

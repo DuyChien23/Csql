@@ -15,7 +15,7 @@ namespace Csql {
 
     bool WhereExpression::apply(const JoinedTuple &tuple) const {
         SqlTypes result = expression->apply(tuple);
-        if (!std::holds_alternative<SqlBoolType>(result)) throw Errors(expressionError);
+        if (!std::holds_alternative<SqlBoolType>(result)) throw Errors("Type of operand invalid");
 
         return std::get<SqlBoolType>(result);
     }

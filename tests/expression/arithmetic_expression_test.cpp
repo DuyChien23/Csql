@@ -3,6 +3,7 @@
 //
 
 #include "expression_test.h"
+#include "../../src/core/storage/expression/arithmetic_expresstion.h"
 
 class ArithmeticExpressionTest : public ::testing::Test {
 protected:

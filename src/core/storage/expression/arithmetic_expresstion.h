@@ -25,7 +25,7 @@ namespace Csql {
             SqlTypes left = leftOperand->apply(tuple);
             SqlTypes right = rightOperand->apply(tuple);
             if (std::holds_alternative<SqlIntType>(left) && std::holds_alternative<SqlIntType>(right)) {
-                if (std::get<SqlIntType>(right) == 0) throw Errors(expressionError);
+                if (std::get<SqlIntType>(right) == 0) throw Errors("Can't devide zero");
 
                 switch (op) {
                     case ArithmeticOperator::addition:
@@ -44,13 +44,13 @@ namespace Csql {
             if ((!std::holds_alternative<SqlIntType>(left) && !std::holds_alternative<SqlFloatType>(left)) ||
                 (!std::holds_alternative<SqlIntType>(right) && !std::holds_alternative<SqlFloatType>(right)) ||
                 op == ArithmeticOperator::modulus) {
-                throw Errors(expressionError);
+                throw Errors("Can't mod float number");
             }
 
             SqlFloatType x = std::holds_alternative<SqlFloatType>(left) ? std::get<SqlFloatType>(left) : std::get<SqlIntType>(left);
             SqlFloatType y = std::holds_alternative<SqlFloatType>(right) ? std::get<SqlFloatType>(right) : std::get<SqlIntType>(right);
 
-            if (y == 0) throw Errors(expressionError);
+            if (y == 0) throw Errors("Can't devide zero");
 
             switch (op) {
                 case ArithmeticOperator::addition:

@@ -14,7 +14,7 @@ namespace Csql {
             : entityName(std::move(_entityName)), attributeName(std::move(_attributeName)) {};
 
         SqlTypes apply(const JoinedTuple& tuple) override {
-            if (!tuple.contains({entityName, attributeName})) throw Errors(expressionError);
+            if (!tuple.contains({entityName, attributeName})) throw Errors("Attribute not found");
             return tuple.at({entityName, attributeName});
         }
     private:
