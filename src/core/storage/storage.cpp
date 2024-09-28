@@ -76,12 +76,26 @@ namespace Csql {
         }
     }
 
-    void Storage::pushDataPage(const std::string &entityName, SharedPagePtr aPage) {
+    void Storage::pushDataPage(const std::string &entityName, SharedPagePtr& aPage) {
         SharedEntityPtr theEntity = getEntity(entityName);
         aPage->set_next_page(theEntity->getFirstDataPage());
         theEntity->setFirstDataPage(aPage->get_page_index());
         writePage(aPage);
     }
+
+    void Storage::moveDataPageToFree(SharedPagePtr &theDataPage, SharedPagePtr &theLastPage) {
+        SharedEntityPtr& theEntity = theDataPage->get_the_entity();
+
+        if (theLastPage == nullptr) {
+            theEntity->setFirstDataPage(theDataPage->get_next_page());
+        } else {
+            theLastPage->set_next_page(theDataPage->get_next_page());
+        }
+
+        theDataPage->set_next_page(theEntity->getFirstFreePage());
+        theEntity->setFirstFreePage(theDataPage->get_page_index());
+    }
+
 
     void Storage::eachDataPage(const std::string &entityName, const PageVisitor &pageVisitor) {
         SharedEntityPtr theEntity = getEntity(entityName);

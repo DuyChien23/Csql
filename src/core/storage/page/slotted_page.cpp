@@ -4,7 +4,7 @@
 
 #include "slotted_page.h"
 
-#include <assert.h>
+#include <cassert>
 
 #include "../../util/configs.h"
 #include "../../util/helpers.h"
@@ -94,4 +94,12 @@ namespace Csql {
         return true;
     }
 
+    void SlottedPage::deleteTuple(u_int32_t iSlot) {
+        assert(iSlot < numSlots);
+        uint32_t sz = Helpers::SqlTypeHandle::sizeOfTuple(tuples[iSlot]);
+        shift(endFreeSpace + sz, endFreeSpace, slots[iSlot] - endFreeSpace);
+        tuples.erase(tuples.begin() + iSlot);
+        slots.erase(slots.begin() + iSlot);
+        numSlots--;
+    }
 }

@@ -167,6 +167,12 @@ namespace Csql {
             }
          }
 
+         static JoinedTuple covertTupleToJoinedTuple(const std::string& entityName, const Tuple& aTuple) {
+            JoinedTuple theJoinedTuple;
+            addToJoinedTuple(theJoinedTuple, entityName, aTuple);
+            return theJoinedTuple;
+         }
+
          static void removeFromJoinedTuple(JoinedTuple& theJoinTuple, const std::string& entityName, const Tuple& aTuple) {
             for (auto& element : aTuple) {
                auto key = std::make_pair(entityName, element.first);

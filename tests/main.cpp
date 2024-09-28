@@ -1,6 +1,7 @@
 #include "../src/core/storage/database.h"
 #include "../src/core/storage/expression/attribute_expression.h"
 #include "../src/core/storage/expression/binary_expression.h"
+#include "../src/core/storage/expression/value_expression.h"
 #include "../src/core/view/table_view.h"
 #include "gtest/gtest.h"
 
@@ -80,22 +81,41 @@ TEST(MAIN, MAIN_TEST_INSERT) {
         std::make_pair("course_id", SqlIntType(2)),
     };
 
- //  database->insert(std::cerr, "students", tuple1);
+   database->insert(std::cerr, "students", tuple1);
    // database->insert(std::cerr, "courses", tuple2);
-  database->insert(std::cerr, "student_course", tuple3);
+  //database->insert(std::cerr, "student_course", tuple3);
 }
 
 TEST(MAIN, MAIN_TEST_SELECT) {
     Database *database = intiDatabase();
     SQLQueryPtr aSQLQuery = std::make_unique<SQLQuery>();
-    JoinExpression join_expression1(JoinTypes::cross, "students");
-    join_expression1.addAndExpression(
-        new BinaryExpression(BinaryOperator::equal,
-            new AttributeExpression("students", "id"),
-            new AttributeExpression("student_course", "student_id")));
-    aSQLQuery->addJoinExpression(join_expression1);
-    aSQLQuery->setEntityName("student_course");
+    // JoinExpression join_expression1(JoinTypes::cross, "students");
+    // join_expression1.addAndExpression(
+    //     new BinaryExpression(BinaryOperator::equal,
+    //         new AttributeExpression("students", "id"),
+    //         new AttributeExpression("student_course", "student_id")));
+    // aSQLQuery->addJoinExpression(join_expression1);
+    aSQLQuery->setEntityName("students");
     database->select(std::cerr, aSQLQuery);
+}
+
+TEST(MAIN, MAIN_TEST_DELETE) {
+    Database *database = intiDatabase();
+    SQLQueryPtr aSQLQuery = std::make_unique<SQLQuery>();
+    WhereExpression where_expression;
+    where_expression.addAndExpression(new BinaryExpression(BinaryOperator::equal,
+            new AttributeExpression("students", "id"),
+            new ValueExpression(SqlIntType(2))));
+    aSQLQuery->setWhereExpression(where_expression);
+
+    // JoinedTuple joined_tuple;
+    //
+    // auto key = std::make_pair("students", "id");
+    // joined_tuple[key] = SqlIntType(2);
+
+
+    aSQLQuery->setEntityName("students");
+    database->deleteTuples(std::cerr, aSQLQuery);
 }
 
 int main(int argc, char **argv) {

@@ -49,6 +49,7 @@ namespace Csql {
         Tuple* readTuple(uint32_t iSlot);
         void writeTuple(uint32_t iSlot);
         bool addTuple(const Tuple& aTuple);
+        void deleteTuple(u_int32_t iSlot);
 
 
         [[nodiscard]] uint32_t get_page_index() const {
@@ -99,7 +100,7 @@ namespace Csql {
             this->slots = slots;
         }
 
-        [[nodiscard]] std::vector<Tuple> get_tuples() const {
+        [[nodiscard]] std::vector<Tuple>& get_tuples() {
             return tuples;
         }
 
@@ -107,7 +108,7 @@ namespace Csql {
             this->tuples = tuples;
         }
 
-        [[nodiscard]] SharedEntityPtr get_the_entity() const {
+        [[nodiscard]] SharedEntityPtr& get_the_entity() {
             return theEntity;
         }
 

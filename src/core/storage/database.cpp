@@ -229,6 +229,39 @@ namespace Csql {
         theTableView.show(anOutput);
     }
 
+    void Database::deleteTuples(std::ostream &anOutput, const SQLQueryPtr &aDeleteQuery) {
+        std::string theEntityName = aDeleteQuery->getEntityName();
+        validateTableExisted(theEntityName);
+
+        SharedPagePtr theLastPage = nullptr;
+        uint32_t countEffectedRow = 0;
+        eachDataPage(theEntityName, [&](SharedPagePtr& aPage) {
+            for (int i = aPage->get_num_slots() - 1; i >= 0; --i) {
+                if (aDeleteQuery->getWhereExpression().
+                    apply(Helpers::JoinHandle::covertTupleToJoinedTuple(theEntityName, aPage->get_tuples().at(i)))
+                ) {
+                    countEffectedRow ++;
+                    aPage->deleteTuple(i);
+                }
+            }
+
+            if (aPage->get_num_slots() == 0) {
+                moveDataPageToFree(aPage, theLastPage);
+            }
+
+            if (theLastPage) {
+                writePage(theLastPage);
+            }
+            theLastPage = aPage;
+        });
+
+        if (theLastPage) {
+            writePage(theLastPage);
+        }
+        saveEntity(getEntity(theEntityName));
+
+        QueryResultView(countEffectedRow, "deleted").show(anOutput);
+    }
 
     // make sure the table is existed
     void Database::validateTableExisted(std::string aEntityName) {

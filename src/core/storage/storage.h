@@ -106,10 +106,14 @@ namespace Csql {
         void deleteEntityFile(std::string entityName);
         void eachEntity(const EntityVisitor& entityVisitor);
 
+        // get 1 free page
         SharedPagePtr popFreePage(const std::string& entityName);
-        void pushDataPage(const std::string &entityName, SharedPagePtr aPage);
-        void eachDataPage(const std::string& entityName, const PageVisitor& pageVisitor);
+        // add aPage to data page zone
+        void pushDataPage(const std::string &entityName, SharedPagePtr& aPage);
+        // move data page to free zone
+        void moveDataPageToFree(SharedPagePtr& theDataPage, SharedPagePtr& theLastPage);
 
+        void eachDataPage(const std::string& entityName, const PageVisitor& pageVisitor);
         void eachTuple(const std::string& entityName, const TupleVisitor& tupleVisitor, bool isUpdate = false);
     };
 }

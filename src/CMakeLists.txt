@@ -16,6 +16,15 @@ add_executable(Csql main.cpp ${Sources}
         core/storage/expression/other_expression.h
         core/storage/expression/join_expression.cpp
         core/storage/expression/join_expression.h
+        core/controller/tokenizer/scanner.h
+        core/controller/tokenizer/tokenizer.cpp
+        core/controller/tokenizer/tokenizer.h
+        core/controller/tokenizer/keywords.h
+        core/controller/parsers/parser.h
+        core/controller/parsers/sql_parser.cpp
+        core/controller/parsers/sql_parser.h
+        core/controller/statements/statement.h
+        core/controller/statements/entity_statements/create_entity_statement.h
 )
 
 target_link_libraries(Csql PUBLIC

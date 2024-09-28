@@ -60,6 +60,10 @@ namespace Csql {
         void read(std::string& aString);
 
         void read(SqlTypes &aValue, DataTypes type);
+
+        void shift(uint32_t dest, uint32_t src, uint32_t range) {
+            std::memcpy(rawData + dest, rawData + src, range);
+        }
     };
 }
 
