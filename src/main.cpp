@@ -2,11 +2,23 @@
 // Created by chiendd on 22/07/2024.
 //
 
-#include <iostream>
+#include <string>
+#include "core/server/sql_server.h"
+#include "core/util/configs.h"
+#include "core/util/helpers.h"
 
-#include "core/view/table_view.h"
+int main(int argc, const char * argv[]) {
+    std::string theServerAddress = Configs::defaultServerAddress;
+    unsigned short theServerPort = Configs::defaultServerPort;
 
-int main() {
-     TableView table_view("abc", "def");
-     table_view.show(std::cerr);
+    if (argc == 3) {
+        theServerAddress = argv[1];
+        theServerPort = std::stoi(argv[2]);
+    }
+
+    Csql::Helpers::FolderHandle::createIfNotExist(Configs::databaseDictionaryName);
+
+    Csql::SQLServer theServer(theServerAddress, theServerPort);
+    theServer.run();
 }
+

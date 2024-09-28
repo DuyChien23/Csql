@@ -5,6 +5,8 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 #include <vector>
+#include <filesystem>
+
 #include "errors.h"
 #include "../storage/expression/join_expression.h"
 
@@ -56,6 +58,16 @@ namespace Csql {
                 default:
                    return "";
              }
+          }
+
+          static DataTypes covertStringToDataType(std::string type) {
+             if (type == "bool") return DataTypes::bool_type;
+             if (type == "date") return DataTypes::datetime_type;
+             if (type == "int") return DataTypes::int_type;
+             if (type == "integer") return DataTypes::int_type;
+             if (type == "float") return DataTypes::float_type;
+             if (type == "varchar") return DataTypes::varchar_type;
+             return DataTypes::null_type;
           }
 
           static uint32_t sizeOfSqlType(const SqlTypes& value) {
@@ -167,6 +179,12 @@ namespace Csql {
             }
          }
 
+         static JoinedTuple covertTupleToJoinedTuple(const std::string& entityName, const Tuple& aTuple) {
+            JoinedTuple theJoinedTuple;
+            addToJoinedTuple(theJoinedTuple, entityName, aTuple);
+            return theJoinedTuple;
+         }
+
          static void removeFromJoinedTuple(JoinedTuple& theJoinTuple, const std::string& entityName, const Tuple& aTuple) {
             for (auto& element : aTuple) {
                auto key = std::make_pair(entityName, element.first);
@@ -220,6 +238,20 @@ namespace Csql {
             }
 
             return result;
+         }
+      };
+
+      class FolderHandle {
+      public:
+         static bool containFolder(const std::string& theFolder, const std::string& subFolder) {
+            return std::filesystem::exists(theFolder + "/" + subFolder);
+         }
+
+         static bool createIfNotExist(const std::string& theFolder) {
+            if (!std::filesystem::exists(theFolder)) {
+               return std::filesystem::create_directory(theFolder);
+            }
+            return false;
          }
       };
    };

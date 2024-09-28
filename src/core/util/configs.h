@@ -11,6 +11,10 @@ namespace Configs {
     const size_t cacheMaxSize = 100000;
     const std::string databaseDictionaryName = "Databases";
     const std::string entityFileExtension = ".csql";
+
+    const std::string defaultServerAddress = "127.0.0.1";
+    const unsigned short defaultServerPort = 8080;
+    const int maxBacklog = 3;
 }
 
 #endif //CONSTANT_H

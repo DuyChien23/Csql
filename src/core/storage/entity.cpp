@@ -105,27 +105,6 @@ namespace Csql {
         }
     }
 
-
-    Attribute* Entity::getAttribute(const std::string& name) {
-        for (auto attribute : attributes) {
-            if (attribute->getName() == name) {
-                return attribute;
-            }
-        }
-        return nullptr;
-    }
-
-    AttributeList* Entity::getAttributes() {
-        return &attributes;
-    }
-
-
-    void Entity::addAttribute(Attribute *attribute) {
-        if (!getAttribute(attribute->getName())) {
-            attributes.push_back(attribute);
-        }
-    }
-
     Tuple Entity::baseNullTuple() {
         Tuple theTuple;
         for (auto &attribute : attributes) {
@@ -141,4 +120,60 @@ namespace Csql {
         }
     }
 
+    //-----------------------------GETER AND SETTER--------------------------------
+
+    Attribute* Entity::getAttribute(const std::string& name) {
+        for (auto attribute : attributes) {
+            if (attribute->getName() == name) {
+                return attribute;
+            }
+        }
+        return nullptr;
+    }
+
+    AttributeList* Entity::getAttributes() {
+        return &attributes;
+    }
+
+    void Entity::addAttribute(Attribute *attribute) {
+        if (!getAttribute(attribute->getName())) {
+            attributes.push_back(attribute);
+        }
+    }
+
+    void Entity::setDatabaseName(std::string dbName) {
+        this->dbName = dbName;
+    }
+
+    void Entity::setFirstDataPage(uint64_t firstDataBlock) {
+        this->firstDataPage = firstDataBlock;
+    }
+
+    uint64_t Entity::getFirstDataPage() {
+        return firstDataPage;
+    }
+
+    void Entity::setFirstFreePage(uint64_t firstFreeBlock) {
+        this->firstFreePage = firstFreeBlock;
+    }
+
+    bool Entity::hasDataPage() {
+        return firstDataPage;
+    }
+
+    bool Entity::hasFreePage() {
+        return firstFreePage;
+    }
+
+    uint64_t Entity::getFirstFreePage() {
+        return firstFreePage;
+    }
+
+    uint64_t Entity::getIndexNewPage() {
+        return nPage++;
+    }
+
+    std::string Entity::getName() {
+        return name;
+    }
 }

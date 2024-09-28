@@ -25,6 +25,7 @@ namespace Csql {
         void dropTable(std::ostream& anOutput, std::string aEntityName);
         void insert(std::ostream& anOutput, std::string aEntityName, const Tuple &aTuple);
         void select(std::ostream& anOutput, SQLQueryPtr& aSelectQuery);
+        void deleteTuples(std::ostream& anOutput, const SQLQueryPtr& aDeleteQuery);
 
     protected:
         std::string name;
@@ -35,6 +36,9 @@ namespace Csql {
         void validateTableExisted(std::string aEntityName);
         void validateTableNotExisted(std::string aEntityName);
     };
+
+    using DatabasePtr  = Database*;
+    using UniqueDatabasePtr = std::unique_ptr<Database>;
 }
 
 #endif //DATABASE_H
