@@ -38,14 +38,13 @@ namespace Csql {
         Token* tokenAt(size_t anOffset);
 
         inline Token *peek();
-        bool check(SqlKeywords aKeyword);
-        bool check(std::string aData);
-        bool endBy(std::string aData);
+        Tokenizer* check(SqlKeywords aKeyword);
+        Tokenizer* check(std::string aData);
+        void endBy(std::string aData);
         Tokenizer *reset();
 
         template<typename T>
         bool currentIs(const T aData) {
-            if (!peek()) return false;
             if constexpr (std::is_same_v<T, SqlKeywords>) {
                 if (peek()->type != TokenType::keyword) {
                     return false;
@@ -71,7 +70,6 @@ namespace Csql {
         }
 
         bool currentIsChar(char aChar) {
-            if (!peek()) return false;
             if (peek()->type != TokenType::punctuation) {
                 return false;
             }
@@ -80,22 +78,21 @@ namespace Csql {
 
         template<typename T>
         Tokenizer *skipType(T& aData) {
-            if (!peek()) return nullptr;
             if constexpr (std::is_same_v<T, int>) {
                 if (peek()->type != TokenType::number) {
-                    return nullptr;
+                    throw Errors("Unexpected token: " + peek()->data);
                 }
                 aData = std::stoi(peek()->data);
             }
             if constexpr (std::is_same_v<T, SqlKeywords>) {
                 if (peek()->type != TokenType::keyword) {
-                    return nullptr;
+                    throw Errors("Unexpected token: " + peek()->data);
                 }
                 aData = mSqlKeywords[peek()->data];
             }
             if constexpr (std::is_same_v<T, float>) {
                 if (peek()->type != TokenType::number) {
-                    return nullptr;
+                    throw Errors("Unexpected token: " + peek()->data);
                 }
                 aData = std::stod(peek()->data);
             }

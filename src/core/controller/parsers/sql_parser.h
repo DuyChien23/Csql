@@ -16,12 +16,14 @@ namespace Csql {
         const std::vector<SqlParserFactory> factories = {
             &SqlParser::createEntityStatement,
             &SqlParser::describeEntityStatement,
-            &SqlParser::dropEntityStatement
+            &SqlParser::dropEntityStatement,
+            &SqlParser::insertStatement
         };
 
         Statement* createEntityStatement(Tokenizer *aTokenizer);
         Statement* describeEntityStatement(Tokenizer *aTokenizer);
         Statement* dropEntityStatement(Tokenizer *aTokenizer);
+        Statement* insertStatement(Tokenizer *aTokenizer);
     };
 }
 

@@ -88,9 +88,37 @@ namespace Csql {
         QueryResultView(0, "drop table").show(anOutput);
     }
 
-    void Database::insert(std::ostream &anOutput, std::string aEntityName, const Tuple &theTuple) {
+    void Database::insert(
+        std::ostream &anOutput,
+        std::string aEntityName,
+        std::vector<std::pair<std::string, std::string>> &aValues,
+        bool hasAtrributeName)
+    {
         validateTableExisted(aEntityName);
+        SharedEntityPtr theEntity = getEntity(aEntityName);
+        Tuple theTuple;
 
+        if (!hasAtrributeName && theEntity->getAttributes()->size() != aValues.size()) {
+            throw Errors("Number of columns not match");
+        }
+
+        for (int i = 0; i < aValues.size(); i++) {
+            Attribute* theAttribute;
+            if (hasAtrributeName) {
+                theAttribute = theEntity.get()->getAttribute(aValues[i].first);
+            } else {
+                theAttribute = theEntity->getAttributes()->at(i);
+            }
+            if (theAttribute == nullptr) {
+                throw Errors("Column not found");
+            }
+            theTuple[theAttribute->getName()] = Helpers::SqlTypeHandle::covertStringToSqlType( theAttribute->getType(), aValues[i].second);
+        }
+
+        doInsert(anOutput, aEntityName, theTuple);
+    }
+
+    void Database::doInsert(std::ostream &anOutput, std::string aEntityName, const Tuple &theTuple) {
         SharedEntityPtr theEntity = getEntity(aEntityName);
 
         if (!validateInsert(anOutput, theEntity, theTuple)) {

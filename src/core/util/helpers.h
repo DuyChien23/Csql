@@ -70,6 +70,42 @@ namespace Csql {
              return DataTypes::null_type;
           }
 
+          static SqlTypes covertStringToSqlType (DataTypes type, std::string value) {
+             if (type == DataTypes::bool_type) {
+                for (auto &c : value)
+                   c = std::tolower(c);
+
+                if (value == "true") return SqlBoolType(true);
+                if (value == "false") return SqlBoolType(false);
+                throw Errors("Invalid value for bool type");
+             }
+             if (type == DataTypes::int_type) {
+                try {
+                   return SqlIntType(std::stoi(value));
+                } catch (...) {
+                   throw Errors("Invalid value for int type");
+                }
+             }
+             if (type == DataTypes::float_type) {
+                try {
+                   return SqlFloatType(std::stof(value));
+                } catch (...) {
+                   throw Errors("Invalid value for float type");
+                }
+             }
+             if (type == DataTypes::datetime_type) {
+                try {
+                   return SqlDatetimeType(std::stoull(value));
+                } catch (...) {
+                   throw Errors("Invalid value for datetime type");
+                }
+             }
+             if (type == DataTypes::varchar_type) {
+                return SqlVarcharType(value);
+             }
+             return SqlNullType();
+          }
+
           static uint32_t sizeOfSqlType(const SqlTypes& value) {
              switch (value.index()) {
                 case sql_types_index_v<SqlBoolType>:

@@ -4,65 +4,56 @@
 
 #include "sql_parser.h"
 
+#include <iostream>
+
 #include "../../storage/entity.h"
 #include "../statements/entity_statements/create_table_statement.h"
 #include "../statements/entity_statements/describe_table_statement.h"
 #include "../statements/entity_statements/drop_table_statement.h"
+#include "../statements/entity_statements/insert_statement.h"
 
 namespace Csql {
+    void getListString(Tokenizer *aTokenizer, std::vector<std::string>& list);
+
+    //-------------------------------------------------------------------------------------------------
     Statement* SqlParser::makeStatement(Tokenizer &aTokenizer) {
-        for (auto &theFactory : factories) {
-            Statement *theStatement = (this->*theFactory)(aTokenizer.reset());
-            if (theStatement != nullptr) {
-                return theStatement;
+        for (auto &factory : factories) {
+            try {
+                Statement *statement = (this->*factory)(aTokenizer.reset());
+                if (statement != nullptr) {
+                    return statement;
+                }
+            } catch (...) {
+                // do nothing because we want to try the next factory
             }
         }
         return nullptr;
     }
 
     Statement* SqlParser::createEntityStatement(Tokenizer *aTokenizer) {
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::create_kw));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::table_kw));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->peek());
-
         std::string theEntityName;
-        RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(theEntityName));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check("("));
+        aTokenizer->check(SqlKeywords::create_kw)->check(SqlKeywords::table_kw)->skipType(theEntityName)->check("(");
 
-        SharedEntityPtr theEntity = std::make_shared<Entity>("noname", theEntityName);
-
+        SharedEntityPtr theEntity = std::make_shared<Entity>(theEntityName);
         std::vector<std::pair<std::string, std::pair<std::string, std::string>>> foreignKeys;
 
         while (!aTokenizer->currentIsChar(')')) {
             if (aTokenizer->currentIs(SqlKeywords::foreign_kw)) {
-                RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::foreign_kw));
-                RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::key_kw));
-                RETURN_IF_CONDITION_FALSE(aTokenizer->check("("));
                 std::string attributeName;
-                RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(attributeName));
-                RETURN_IF_CONDITION_FALSE(aTokenizer->check(")"));
-                RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::references_kw));
-                std::string refEntityName;
-                RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(refEntityName));
-                RETURN_IF_CONDITION_FALSE(aTokenizer->check("("));
-                std::string refAttributeName;
-                RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(refAttributeName));
-                RETURN_IF_CONDITION_FALSE(aTokenizer->check(")"));
+                aTokenizer->check(SqlKeywords::foreign_kw)->check(SqlKeywords::key_kw)->check("(")->skipType(attributeName)->check(")");
+                std::string refEntityName, refAttributeName;
+                aTokenizer->check(SqlKeywords::references_kw)->skipType(refEntityName)->check("(")->skipType(refAttributeName)->check(")");
                 foreignKeys.push_back({attributeName, {refEntityName, refAttributeName}});
             } else {
                 Attribute *theAtrribute = new Attribute();
-                std::string attributeName;
-                RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(attributeName));
+                std::string attributeName, type;
+                aTokenizer->skipType(attributeName)->skipType(type);
                 theAtrribute->setName(attributeName);
-
-                std::string type;
-                RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(type));
                 theAtrribute->setType(Helpers::SqlTypeHandle::covertStringToDataType(type));
+
                 if (theAtrribute->getType() == DataTypes::varchar_type) {
-                    RETURN_IF_CONDITION_FALSE(aTokenizer->check("("));
                     int size;
-                    RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(size));
-                    RETURN_IF_CONDITION_FALSE(aTokenizer->check(")"));
+                    aTokenizer->check("(")->skipType(size)->check(")");
                     // TODO: set size
                 }
                 if (theAtrribute->getType() == DataTypes::null_type) {
@@ -76,22 +67,22 @@ namespace Csql {
                     }
 
                     SqlKeywords theKeyword;
-                    RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(theKeyword));
+                    aTokenizer->skipType(theKeyword);
                     switch (theKeyword) {
                         case SqlKeywords::primary_kw:
-                            RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::key_kw));
-                        theAtrribute->setPrimary(true);
-                        break;
+                            aTokenizer->check(SqlKeywords::key_kw);
+                            theAtrribute->setPrimary(true);
+                            break;
                         case SqlKeywords::auto_increment:
                             theAtrribute->setAutoIncrement(true);
-                        break;
+                            break;
                         case SqlKeywords::unique_kw:
                             theAtrribute->setUnique(true);
-                        break;
+                            break;
                         case SqlKeywords::not_kw:
-                            RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::null_kw));
-                        theAtrribute->setNullable(false);
-                        break;
+                            aTokenizer->check(SqlKeywords::null_kw);
+                            theAtrribute->setNullable(false);
+                            break;
                         default:
                             return nullptr;
                     }
@@ -102,10 +93,10 @@ namespace Csql {
             if (aTokenizer->currentIsChar(')')) {
                 break;
             }
-            RETURN_IF_CONDITION_FALSE(aTokenizer->check(","));
+            aTokenizer->check(",");
         }
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(")"));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->endBy(";"));
+        aTokenizer->check(")");
+        aTokenizer->endBy(";");
 
         for (auto foreignKey : foreignKeys) {
             auto theAttribute = theEntity->getAttribute(foreignKey.first);
@@ -120,24 +111,50 @@ namespace Csql {
     }
 
     Statement* SqlParser::describeEntityStatement(Tokenizer *aTokenizer) {
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::describe_kw));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::table_kw));
-
         std::string theEntityName;
-        RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(theEntityName));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->endBy(";"));
+        aTokenizer->check(SqlKeywords::describe_kw)->check(SqlKeywords::table_kw)->skipType(theEntityName)->endBy(";");
 
         return new DescribeTableStatement(theEntityName, output);
     }
 
     Statement* SqlParser::dropEntityStatement(Tokenizer *aTokenizer) {
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::drop_kw));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::table_kw));
-
         std::string theEntityName;
-        RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(theEntityName));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->endBy(";"));
+        aTokenizer->check(SqlKeywords::drop_kw)->check(SqlKeywords::table_kw)->skipType(theEntityName)->endBy(";");
 
         return new DropTableStatement(theEntityName, output);
+    }
+
+    Statement *SqlParser::insertStatement(Tokenizer *aTokenizer) {
+        std::string theEntityName;
+        aTokenizer->check(SqlKeywords::insert_kw)->check(SqlKeywords::into_kw)->skipType(theEntityName);
+
+        std::vector<std::string> attributeNames;
+        std::vector<std::string> values;
+
+        if (aTokenizer->currentIsChar('(')) {
+            getListString(aTokenizer, attributeNames);
+        }
+
+        aTokenizer->check(SqlKeywords::values_kw);
+        getListString(aTokenizer, values);
+        aTokenizer->endBy(";");
+
+        return new InsertStatement(theEntityName, output, attributeNames, values);
+    }
+
+    // get list string from tokenizer. format: (string1, string2, string3, ...)
+    void getListString(Tokenizer *aTokenizer, std::vector<std::string>& list) {
+        aTokenizer->check("(");
+        while (!aTokenizer->currentIsChar(')')) {
+            std::string attributeName;
+            aTokenizer->skipType(attributeName);
+
+            list.push_back(attributeName);
+            if (aTokenizer->currentIsChar(')')) {
+                break;
+            }
+            aTokenizer->check(",");
+        }
+        aTokenizer->check(")");
     }
 }

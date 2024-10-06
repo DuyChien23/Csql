@@ -4,6 +4,8 @@
 
 #include "database_parser.h"
 
+#include <iostream>
+
 #include "../statements/database_statements/create_database.h"
 #include "../statements/database_statements/show_tables.h"
 #include "../statements/database_statements/show_databases.h"
@@ -11,45 +13,40 @@
 
 namespace Csql {
     Statement* DatabaseParser::makeStatement(Tokenizer &aTokenizer) {
-        Statement *statement = nullptr;
         for (auto &factory : factories) {
-            statement = (this->*factory)(aTokenizer.reset());
-            if (statement != nullptr) {
-                break;
+            try {
+                Statement *statement = (this->*factory)(aTokenizer.reset());
+                if (statement != nullptr) {
+                    return statement;
+                }
+            } catch (...) {
+                // do nothing because we want to try the next factory
             }
         }
-        return statement;
+        return nullptr;
     }
 
     Statement* DatabaseParser::useDatabaseStatement(Tokenizer *aTokenizer) {
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::use_kw));
         std::string databaseName;
-        RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(databaseName));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->endBy(";"));
-
+        aTokenizer->check(SqlKeywords::use_kw)->skipType(databaseName)->endBy(";");
         return new UseDatabaseStatement(databaseName, output);
     }
 
     Statement *DatabaseParser::createDatabaseStatement(Tokenizer *aTokenizer) {
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::create_kw));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::database_kw));
         std::string databaseName;
-        RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(databaseName));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->endBy(";"));
+        aTokenizer->check(SqlKeywords::create_kw)->check(SqlKeywords::database_kw)->skipType(databaseName)->endBy(";");
 
         return new CreateDatabaseStatement(databaseName, output);
     }
 
     Statement *DatabaseParser::showTableStatement(Tokenizer *aTokenizer) {
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::show_kw));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::tables_kw));
+        aTokenizer->check(SqlKeywords::show_kw)->check(SqlKeywords::tables_kw)->endBy(";");
 
         return new ShowTablesStatement(output);
     }
 
     Statement *DatabaseParser::showDatabasesStatement(Tokenizer *aTokenizer) {
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::show_kw));
-        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::databases_kw));
+        aTokenizer->check(SqlKeywords::show_kw)->check(SqlKeywords::databases_kw)->endBy(";");
 
         return new ShowDatabasesStatement(output);
     }
