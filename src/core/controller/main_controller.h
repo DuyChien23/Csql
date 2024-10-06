@@ -4,9 +4,9 @@
 
 #ifndef MAIN_CONTROLLER_H
 #define MAIN_CONTROLLER_H
-#include <vector>
 
-#include "parsers/sql_parser.h"
+#include "parsers/parser.h"
+#include <vector>
 
 namespace Csql {
     class MainController {

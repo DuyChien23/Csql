@@ -30,7 +30,7 @@ namespace Csql {
         union_kw, unique_kw, update_kw,
         values_kw, view_kw, varchar_kw,
         when_kw, where_kw,
-        unkonwn_kw,
+        unkonwn_kw, use_kw,
     };
 
     static std::map<std::string, SqlKeywords> mSqlKeywords = {
@@ -95,7 +95,8 @@ namespace Csql {
         std::make_pair("varchar", SqlKeywords::varchar_kw),
         std::make_pair("when", SqlKeywords::when_kw),
         std::make_pair("where", SqlKeywords::where_kw),
-        std::make_pair("unknown", SqlKeywords::unkonwn_kw)
+        std::make_pair("unknown", SqlKeywords::unkonwn_kw),
+        std::make_pair("use", SqlKeywords::use_kw)
     };
 
     enum class SqlOperators {

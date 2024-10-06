@@ -18,6 +18,9 @@ namespace Csql {
 
         void execute() override {
             DatabasePtr database = DatabaseController::getDatabase();
+            if (database == nullptr) {
+                throw Errors("No database selected");
+            }
             database->createTable(output, entity);
         }
     protected:

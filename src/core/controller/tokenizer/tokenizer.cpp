@@ -80,6 +80,10 @@ namespace Csql {
                 }
             }
         }
+
+        while (!tokens.empty() && tokens.back().data == "") {
+            tokens.pop_back();
+        }
     }
 
     size_t Tokenizer::size() const {
@@ -109,7 +113,7 @@ namespace Csql {
         return this;
     }
 
-    Tokenizer *Tokenizer::skipData(std::string aData) {
+    Tokenizer *Tokenizer::check(std::string aData) {
         if (!peek() || peek()->data != aData) {
             return nullptr;
         }
@@ -117,15 +121,11 @@ namespace Csql {
         return this;
     }
 
-    Tokenizer *Tokenizer::skipKeyword(SqlKeywords aKeyword) {
-        if (!peek() || peek()->type != TokenType::keyword) {
-            return nullptr;
+    bool Tokenizer::endBy(std::string aData) {
+        if (check(aData) == nullptr) {
+            return false;
         }
-        if (!mSqlKeywords.contains(peek()->data) || mSqlKeywords[peek()->data] != aKeyword) {
-            return nullptr;
-        }
-        index++;
-        return this;
+        return !peek();
     }
 
     Tokenizer *Tokenizer::reset() {
