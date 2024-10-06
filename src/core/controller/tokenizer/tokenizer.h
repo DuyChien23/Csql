@@ -39,9 +39,8 @@ namespace Csql {
 
         inline Token *peek();
         Tokenizer *check(SqlKeywords aKeyword);
-
-        Tokenizer *skipData(std::string aData);
-        Tokenizer *skipKeyword(SqlKeywords aKeyword);
+        Tokenizer *check(std::string aData);
+        bool endBy(std::string aData);
         Tokenizer *reset();
 
         template<typename T>

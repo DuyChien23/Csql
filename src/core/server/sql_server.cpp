@@ -6,6 +6,7 @@
 
 #include <thread>
 
+#include "../controller/database_controller.h"
 #include "../controller/main_controller.h"
 #include "../controller/tokenizer/tokenizer.h"
 
@@ -58,6 +59,7 @@ namespace Csql {
             }
         }
 
+        DatabaseController::closeDatabase();
         delete []buffer;
         delete clientSocket;
     }

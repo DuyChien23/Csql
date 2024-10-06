@@ -12,6 +12,7 @@ namespace Csql {
     public:
         explicit TCPClient(int socketNum) : Socket(socketNum) {};
         int read(char *buffer, int size) {
+            memset(buffer, 0, size);
             return ::read(socketNum, buffer, size);
         }
         int send(const char *buffer) {

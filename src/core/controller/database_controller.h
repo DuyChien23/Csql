@@ -33,7 +33,7 @@ namespace Csql {
         static void setDatabase(const std::string& aDatabaseName) {
             std::lock_guard lock(mtx);
 
-            if (Helpers::FolderHandle::containFolder(Configs::databaseDictionaryName, aDatabaseName)) {
+            if (!Helpers::FolderHandle::containFolder(Configs::databaseDictionaryName, aDatabaseName)) {
                 throw Errors("Database not exists");
             }
 

@@ -4,9 +4,13 @@
 
 #include "main_controller.h"
 
+#include "parsers/database_parser.h"
+#include "parsers/sql_parser.h"
+
 namespace Csql {
     MainController::MainController(std::ostream &aOutput) : output(aOutput) {
         parsers.push_back(new SqlParser(aOutput));
+        parsers.push_back(new DatabaseParser(aOutput));
     }
 
     std::string MainController::getOutput() const {
