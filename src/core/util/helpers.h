@@ -247,9 +247,9 @@ namespace Csql {
             return std::filesystem::exists(theFolder + "/" + subFolder);
          }
 
-         static bool createIfNotExist(const std::string& theFolder) {
+         static bool createIfNotExist(const std::string& theFolder, const std::string& pFolder = "") {
             if (!std::filesystem::exists(theFolder)) {
-               return std::filesystem::create_directory(theFolder);
+               return std::filesystem::create_directory((pFolder == "" ? "" : pFolder + "/") + theFolder);
             }
             return false;
          }

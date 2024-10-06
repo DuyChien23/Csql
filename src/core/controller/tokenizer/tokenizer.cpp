@@ -98,31 +98,31 @@ namespace Csql {
         return index < size() ? &tokens[index] : nullptr;
     }
 
-    Tokenizer *Tokenizer::check(SqlKeywords aKeyword) {
+    bool Tokenizer::check(SqlKeywords aKeyword) {
         if (!peek()) {
-            return nullptr;
+            return false;
         }
         if (peek()->type != TokenType::keyword) {
-            return nullptr;
+            return false;
         }
         if (!mSqlKeywords.contains(peek()->data) || mSqlKeywords[peek()->data] != aKeyword) {
-            return nullptr;
+            return false;
         }
         index++;
 
-        return this;
+        return true;
     }
 
-    Tokenizer *Tokenizer::check(std::string aData) {
+    bool Tokenizer::check(std::string aData) {
         if (!peek() || peek()->data != aData) {
-            return nullptr;
+            return false;
         }
         index++;
-        return this;
+        return true;
     }
 
     bool Tokenizer::endBy(std::string aData) {
-        if (check(aData) == nullptr) {
+        if (!check(aData)) {
             return false;
         }
         return !peek();
