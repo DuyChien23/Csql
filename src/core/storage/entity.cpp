@@ -108,7 +108,7 @@ namespace Csql {
     Tuple Entity::baseNullTuple() {
         Tuple theTuple;
         for (auto &attribute : attributes) {
-            theTuple.insert(std::make_pair(attribute->getName(), SqlNullType()));
+            theTuple.insert(attribute->getName(), SqlNullType());
         }
         return theTuple;
     }

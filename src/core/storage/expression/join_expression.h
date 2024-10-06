@@ -5,7 +5,6 @@
 #ifndef JOIN_EXPRESSION_H
 #define JOIN_EXPRESSION_H
 #include <string>
-
 #include "expression.h"
 
 namespace Csql {

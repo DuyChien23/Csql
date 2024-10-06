@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "attribute.h"
+#include "tuple.h"
 #include "io_manager/io_manager.h"
 
 namespace Csql {

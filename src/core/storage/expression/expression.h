@@ -4,7 +4,8 @@
 
 #ifndef EXPRESSION_H
 #define EXPRESSION_H
-#include "../../util/types.h"
+
+#include "../tuple.h"
 
 namespace Csql {
     class Expression {

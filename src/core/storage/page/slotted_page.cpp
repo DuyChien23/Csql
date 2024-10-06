@@ -61,13 +61,13 @@ namespace Csql {
         bufferOffset = slots.at(iSlot);
         uint32_t endOffset = (iSlot == 0 ? Configs::storageUnitSize : slots.at(iSlot - 1));
 
-        Tuple *theTuple = new std::map<std::string, SqlTypes>;
+        Tuple *theTuple = new Tuple();
         for (; bufferOffset < endOffset;) {
             std::string name;
             read(name);
             SqlTypes aValue;
             read(aValue, theEntity->getAttribute(name)->getType());
-            theTuple->insert(std::make_pair(name, aValue));
+            theTuple->insert(name, aValue);
         }
 
         return theTuple;

@@ -30,11 +30,11 @@ namespace Csql {
     using SqlFloatType = double;
 
     using SqlTypes = std::variant<SqlNullType, SqlIntType, SqlVarcharType, SqlBoolType, SqlDatetimeType, SqlFloatType>;
-
-    using Tuple = std::map<std::string, SqlTypes>;
-
-    using JoinedTuple = std::map<std::pair<std::string, std::string>, SqlTypes>;
-    //TODO: create struct Tuple that can be used to represent data from both a single table and a joined table
+    //
+    // using Tuple = std::map<std::string, SqlTypes>;
+    //
+    // using JoinedTuple = std::map<std::pair<std::string, std::string>, SqlTypes>;
+    // //TODO: create struct Tuple that can be used to represent data from both a single table and a joined table
 }
 
 #endif //TYPES_H

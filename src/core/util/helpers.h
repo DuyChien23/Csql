@@ -174,8 +174,7 @@ namespace Csql {
       public:
          static void addToJoinedTuple(JoinedTuple& theJoinTuple, const std::string& entityName, const Tuple& aTuple) {
             for (auto& element : aTuple) {
-               auto key = std::make_pair(entityName, element.first);
-               theJoinTuple.insert(std::make_pair(key, element.second));
+               theJoinTuple.insert(entityName, element.first, element.second);
             }
          }
 
@@ -187,9 +186,8 @@ namespace Csql {
 
          static void removeFromJoinedTuple(JoinedTuple& theJoinTuple, const std::string& entityName, const Tuple& aTuple) {
             for (auto& element : aTuple) {
-               auto key = std::make_pair(entityName, element.first);
-               if (theJoinTuple.contains(key)) {
-                  theJoinTuple.erase(key);
+               if (theJoinTuple.contains(entityName, element.first)) {
+                  theJoinTuple.erase(entityName, element.first);
                }
             }
          }
