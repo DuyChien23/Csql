@@ -5,7 +5,9 @@
 #include "sql_parser.h"
 
 #include "../../storage/entity.h"
-#include "../statements/entity_statements/create_entity_statement.h"
+#include "../statements/entity_statements/create_table_statement.h"
+#include "../statements/entity_statements/describe_table_statement.h"
+#include "../statements/entity_statements/drop_table_statement.h"
 
 namespace Csql {
     Statement* SqlParser::makeStatement(Tokenizer &aTokenizer) {
@@ -114,6 +116,28 @@ namespace Csql {
             );
         }
 
-        return new CreateEntityStatement(theEntity, output);
+        return new CreateTableStatement(theEntity, output);
+    }
+
+    Statement* SqlParser::describeEntityStatement(Tokenizer *aTokenizer) {
+        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::describe_kw));
+        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::table_kw));
+
+        std::string theEntityName;
+        RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(theEntityName));
+        RETURN_IF_CONDITION_FALSE(aTokenizer->endBy(";"));
+
+        return new DescribeTableStatement(theEntityName, output);
+    }
+
+    Statement* SqlParser::dropEntityStatement(Tokenizer *aTokenizer) {
+        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::drop_kw));
+        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::table_kw));
+
+        std::string theEntityName;
+        RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(theEntityName));
+        RETURN_IF_CONDITION_FALSE(aTokenizer->endBy(";"));
+
+        return new DropTableStatement(theEntityName, output);
     }
 }

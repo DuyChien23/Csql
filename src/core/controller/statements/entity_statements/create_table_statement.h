@@ -10,17 +10,14 @@
 #include "../../../storage/entity.h"
 
 namespace Csql {
-    class CreateEntityStatement : public Statement {
+    class CreateTableStatement : public Statement {
     public:
-        CreateEntityStatement(SharedEntityPtr& aEntity, std::ostream& output) : Statement(output) {
+        CreateTableStatement(SharedEntityPtr& aEntity, std::ostream& output) : Statement(output) {
             entity = std::move(aEntity);
         }
 
         void execute() override {
             DatabasePtr database = DatabaseController::getDatabase();
-            if (database == nullptr) {
-                throw Errors("No database selected");
-            }
             database->createTable(output, entity);
         }
     protected:
