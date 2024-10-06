@@ -4,13 +4,14 @@
 
 #include "database_parser.h"
 
+#include "../statements/database_statements/create_database.h"
 #include "../statements/database_statements/use_database.h"
 
 namespace Csql {
     Statement* DatabaseParser::makeStatement(Tokenizer &aTokenizer) {
         Statement *statement = nullptr;
         for (auto &factory : factories) {
-            statement = (this->*factory)(&aTokenizer);
+            statement = (this->*factory)(aTokenizer.reset());
             if (statement != nullptr) {
                 break;
             }
@@ -26,4 +27,15 @@ namespace Csql {
 
         return new UseDatabaseStatement(databaseName, output);
     }
+
+    Statement *DatabaseParser::createDatabaseStatement(Tokenizer *aTokenizer) {
+        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::create_kw));
+        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::database_kw));
+        std::string databaseName;
+        RETURN_IF_CONDITION_FALSE(aTokenizer->skipType(databaseName));
+        RETURN_IF_CONDITION_FALSE(aTokenizer->endBy(";"));
+
+        return new CreateDatabaseStatement(databaseName, output);
+    }
+
 }

@@ -38,8 +38,8 @@ namespace Csql {
         Token* tokenAt(size_t anOffset);
 
         inline Token *peek();
-        Tokenizer *check(SqlKeywords aKeyword);
-        Tokenizer *check(std::string aData);
+        bool check(SqlKeywords aKeyword);
+        bool check(std::string aData);
         bool endBy(std::string aData);
         Tokenizer *reset();
 
