@@ -95,37 +95,38 @@ namespace Csql {
     }
 
     Token *Tokenizer::peek() {
+        if (index >= size()) {
+            throw Errors("Unexpected end of statement");
+        }
         return index < size() ? &tokens[index] : nullptr;
     }
 
-    bool Tokenizer::check(SqlKeywords aKeyword) {
-        if (!peek()) {
-            return false;
-        }
+    Tokenizer* Tokenizer::check(SqlKeywords aKeyword) {
         if (peek()->type != TokenType::keyword) {
-            return false;
+            throw Errors("Unexpected token: " + peek()->data);
         }
         if (!mSqlKeywords.contains(peek()->data) || mSqlKeywords[peek()->data] != aKeyword) {
-            return false;
+            throw Errors("Unexpected token: " + peek()->data);
         }
         index++;
 
-        return true;
+        return this;
     }
 
-    bool Tokenizer::check(std::string aData) {
-        if (!peek() || peek()->data != aData) {
-            return false;
+    Tokenizer* Tokenizer::check(std::string aData) {
+        if (peek()->data != aData) {
+            throw Errors("Unexpected token: " + peek()->data);
         }
+
         index++;
-        return true;
+        return this;
     }
 
-    bool Tokenizer::endBy(std::string aData) {
-        if (!check(aData)) {
-            return false;
+    void Tokenizer::endBy(std::string aData) {
+        check(aData);
+        if (index < size()) {
+            throw Errors("Unexpected token: " + peek()->data);
         }
-        return !peek();
     }
 
     Tokenizer *Tokenizer::reset() {

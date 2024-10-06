@@ -62,23 +62,23 @@ TEST(MAIN, MAIN_TEST_DESCRIBE_TABLE) {
 
 TEST(MAIN, MAIN_TEST_INSERT) {
     Database *database = intiDatabase();
-    Tuple tuple1 = {
-        std::make_pair("id", SqlIntType(1)),
-        std::make_pair("first_name", SqlVarcharType("Dao")),
-        std::make_pair("last_name", SqlVarcharType("Chien")),
-        std::make_pair("birthday", SqlDatetimeType(1)),
-        std::make_pair("email", SqlVarcharType("neihcr7j23")),
+    std::vector<std::pair<std::string, std::string>> tuple1 = {
+        std::make_pair("id", "1"),
+        std::make_pair("first_name", "Dao"),
+        std::make_pair("last_name", "Chien"),
+        std::make_pair("birthday", "1"),
+        std::make_pair("email", "neihcr7j23"),
     };
 
-    Tuple tuple2 = {
-        std::make_pair("id", SqlIntType(1)),
-        std::make_pair("name", SqlVarcharType("DSA")),
-        std::make_pair("code", SqlVarcharType("INT123")),
+    std::vector<std::pair<std::string, std::string>> tuple2 = {
+        std::make_pair("id", "1"),
+        std::make_pair("name", "DSA"),
+        std::make_pair("code", "INT123"),
     };
 
-    Tuple tuple3 = {
-        std::make_pair("student_id", SqlIntType(2)),
-        std::make_pair("course_id", SqlIntType(2)),
+    std::vector<std::pair<std::string, std::string>> tuple3 = {
+        std::make_pair("student_id", "2"),
+        std::make_pair("course_id", "2"),
     };
 
    database->insert(std::cerr, "students", tuple1);

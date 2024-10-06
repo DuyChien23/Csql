@@ -23,7 +23,11 @@ namespace Csql {
         void showTables(std::ostream& anOutput);
         void describeTable(std::ostream& anOutput, std::string aEntityName);
         void dropTable(std::ostream& anOutput, std::string aEntityName);
-        void insert(std::ostream& anOutput, std::string aEntityName, const Tuple &aTuple);
+        void insert(
+        std::ostream &anOutput,
+        std::string aEntityName,
+        std::vector<std::pair<std::string, std::string>> &aValues,
+        bool hasAtrributeName = false);
         void select(std::ostream& anOutput, SQLQueryPtr& aSelectQuery);
         void deleteTuples(std::ostream& anOutput, const SQLQueryPtr& aDeleteQuery);
 
@@ -33,6 +37,7 @@ namespace Csql {
     private:
         void validateCreateTable(const SharedEntityPtr& anEntityPtr);
         bool validateInsert(std::ostream &anOutput, const SharedEntityPtr& theEntity, const Tuple &aTuple);
+        void doInsert(std::ostream &anOutput, std::string aEntityName, const Tuple &theTuple);
         void validateTableExisted(std::string aEntityName);
         void validateTableNotExisted(std::string aEntityName);
     };
