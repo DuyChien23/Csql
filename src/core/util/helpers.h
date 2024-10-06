@@ -6,6 +6,7 @@
 #define HELPERS_H
 #include <vector>
 #include <filesystem>
+#include <functional>
 
 #include "errors.h"
 #include "../storage/expression/join_expression.h"
@@ -20,8 +21,7 @@ namespace Csql {
       greater,
    };
 
-   class Helpers {
-   public:
+   namespace Helpers {
       //============================SQL-TYPEs=============================================================
        class SqlTypeHandle {
           template<typename T, typename V>
@@ -252,6 +252,12 @@ namespace Csql {
                return std::filesystem::create_directory((pFolder == "" ? "" : pFolder + "/") + theFolder);
             }
             return false;
+         }
+
+         static void eachFolder(const std::string& theFolder, std::function<void(const std::string&)> aCallback) {
+            for (const auto& entry : std::filesystem::directory_iterator(theFolder)) {
+               aCallback(entry.path().filename().string());
+            }
          }
       };
    };

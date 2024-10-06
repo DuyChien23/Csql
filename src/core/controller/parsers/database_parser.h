@@ -16,11 +16,15 @@ namespace Csql {
     private:
         std::vector<DatabaseParserFactory> factories = {
             &DatabaseParser::useDatabaseStatement,
-            &DatabaseParser::createDatabaseStatement
+            &DatabaseParser::createDatabaseStatement,
+            &DatabaseParser::showTableStatement,
+            &DatabaseParser::showDatabasesStatement
         };
 
         Statement* useDatabaseStatement(Tokenizer *aTokenizer);
         Statement* createDatabaseStatement(Tokenizer *aTokenizer);
+        Statement* showTableStatement(Tokenizer *aTokenizer);
+        Statement* showDatabasesStatement(Tokenizer *aTokenizer);
     };
 }
 

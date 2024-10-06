@@ -19,7 +19,10 @@ namespace Csql {
         static DatabasePtr getDatabase() {
             std::lock_guard lock(mtx);
             auto id = std::this_thread::get_id();
-            return databases.contains(id) ? databases[id].get() : nullptr;
+            if (!databases.contains(id)) {
+                throw Errors("No database selected");
+            }
+            return databases[id].get();
         }
 
         static void closeDatabase() {

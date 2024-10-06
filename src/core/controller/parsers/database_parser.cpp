@@ -5,6 +5,8 @@
 #include "database_parser.h"
 
 #include "../statements/database_statements/create_database.h"
+#include "../statements/database_statements/show_tables.h"
+#include "../statements/database_statements/show_databases.h"
 #include "../statements/database_statements/use_database.h"
 
 namespace Csql {
@@ -36,6 +38,20 @@ namespace Csql {
         RETURN_IF_CONDITION_FALSE(aTokenizer->endBy(";"));
 
         return new CreateDatabaseStatement(databaseName, output);
+    }
+
+    Statement *DatabaseParser::showTableStatement(Tokenizer *aTokenizer) {
+        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::show_kw));
+        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::tables_kw));
+
+        return new ShowTablesStatement(output);
+    }
+
+    Statement *DatabaseParser::showDatabasesStatement(Tokenizer *aTokenizer) {
+        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::show_kw));
+        RETURN_IF_CONDITION_FALSE(aTokenizer->check(SqlKeywords::databases_kw));
+
+        return new ShowDatabasesStatement(output);
     }
 
 }
