@@ -11,7 +11,7 @@ namespace Csql {
 
     void SQLQuery::addTaget(std::string entityName, std::string attributeName, std::string columnName) {
         if (columnName.empty()) {
-            columnName = entityName + "." + attributeName;
+            columnName = (entityName.empty() ? "" : entityName + ".") + attributeName;
         }
 
         targets.emplace_back(std::move(entityName), std::move(attributeName));

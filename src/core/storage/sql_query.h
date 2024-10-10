@@ -13,7 +13,7 @@
 
 namespace Csql {
     enum class OrderType {
-        ASC, DESC
+        asc, desc
     };
 
     class SQLQuery {

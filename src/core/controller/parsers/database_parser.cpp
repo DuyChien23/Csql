@@ -28,13 +28,13 @@ namespace Csql {
 
     Statement* DatabaseParser::useDatabaseStatement(Tokenizer *aTokenizer) {
         std::string databaseName;
-        aTokenizer->check(SqlKeywords::use_kw)->skipType(databaseName)->endBy(";");
+        aTokenizer->check(SqlKeywords::use_kw)->consumeType(databaseName)->endBy(";");
         return new UseDatabaseStatement(databaseName, output);
     }
 
     Statement *DatabaseParser::createDatabaseStatement(Tokenizer *aTokenizer) {
         std::string databaseName;
-        aTokenizer->check(SqlKeywords::create_kw)->check(SqlKeywords::database_kw)->skipType(databaseName)->endBy(";");
+        aTokenizer->check(SqlKeywords::create_kw)->check(SqlKeywords::database_kw)->consumeType(databaseName)->endBy(";");
 
         return new CreateDatabaseStatement(databaseName, output);
     }

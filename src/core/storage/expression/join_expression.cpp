@@ -15,6 +15,11 @@ namespace Csql {
         expression = new ValueExpression(true);
     }
 
+    JoinExpression::JoinExpression(Expression *anExpression) {
+        expression = anExpression;
+    }
+
+
     bool JoinExpression::apply(const JoinedTuple &tuple) const {
         SqlTypes result = expression->apply(tuple);
         if (!std::holds_alternative<SqlBoolType>(result)) throw Errors("Type of Operand invalid");
