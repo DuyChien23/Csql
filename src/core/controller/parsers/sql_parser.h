@@ -18,7 +18,8 @@ namespace Csql {
             &SqlParser::describeEntityStatement,
             &SqlParser::dropEntityStatement,
             &SqlParser::insertStatement,
-            &SqlParser::selectStatement
+            &SqlParser::selectStatement,
+            &SqlParser::deleteTuplesStatement
         };
 
         Statement* createEntityStatement(Tokenizer *aTokenizer);
@@ -26,6 +27,7 @@ namespace Csql {
         Statement* dropEntityStatement(Tokenizer *aTokenizer);
         Statement* insertStatement(Tokenizer *aTokenizer);
         Statement* selectStatement(Tokenizer *aTokenizer);
+        Statement* deleteTuplesStatement(Tokenizer *aTokenizer);
     };
 }
 

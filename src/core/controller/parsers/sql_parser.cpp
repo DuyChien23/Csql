@@ -7,6 +7,7 @@
 #include "../../storage/entity.h"
 #include "../../storage/expression/value_expression.h"
 #include "../statements/table_statements/create_table_statement.h"
+#include "../statements/table_statements/delete_tuples_statement.h"
 #include "../statements/table_statements/describe_table_statement.h"
 #include "../statements/table_statements/drop_table_statement.h"
 #include "../statements/table_statements/insert_statement.h"
@@ -16,6 +17,7 @@
 namespace Csql {
     void getListString(Tokenizer *aTokenizer, std::vector<std::string>& list);
     bool makeJoinExpression(Tokenizer *aTokenizer, ExpressionParser& expressionParser, SQLQueryPtr& theQuery);
+    void makeWhereExpression(Tokenizer *aTokenizer, ExpressionParser& expressionParser, SQLQueryPtr& theQuery);
 
     //-------------------------------------------------------------------------------------------------
     Statement* SqlParser::makeStatement(Tokenizer &aTokenizer) {
@@ -202,12 +204,7 @@ namespace Csql {
         while (makeJoinExpression(aTokenizer, expressionParser, theQuery));
 
         //=================================WHERE===============================
-        if (aTokenizer->currentIs(SqlKeywords::where_kw)) {
-            aTokenizer->check(SqlKeywords::where_kw);
-            theQuery->setWhereExpression(WhereExpression(expressionParser.parse()));
-        } else {
-            theQuery->setWhereExpression(WhereExpression());
-        }
+        makeWhereExpression(aTokenizer, expressionParser, theQuery);
         //=================================GROUP BY============================
         if (aTokenizer->currentIs(SqlKeywords::group_kw)) {
             aTokenizer->check(SqlKeywords::group_kw)->check(SqlKeywords::by_kw);
@@ -263,4 +260,25 @@ namespace Csql {
         }
     }
 
+    Statement *SqlParser::deleteTuplesStatement(Tokenizer *aTokenizer) {
+        SQLQueryPtr theQuery = std::make_unique<SQLQuery>();
+
+        std::string entityName;
+        aTokenizer->check(SqlKeywords::delete_kw)->check(SqlKeywords::from_kw)->consumeType(entityName);
+        theQuery->setEntityName(entityName);
+
+        ExpressionParser expressionParser(aTokenizer);
+        makeWhereExpression(aTokenizer, expressionParser, theQuery);
+
+        return new DeleteTuplesStatement(theQuery, output);
+    }
+
+    void makeWhereExpression(Tokenizer *aTokenizer, ExpressionParser& expressionParser, SQLQueryPtr& theQuery) {
+        if (aTokenizer->currentIs(SqlKeywords::where_kw)) {
+            aTokenizer->check(SqlKeywords::where_kw);
+            theQuery->setWhereExpression(WhereExpression(expressionParser.parse()));
+        } else {
+            theQuery->setWhereExpression(WhereExpression());
+        }
+    }
 }
