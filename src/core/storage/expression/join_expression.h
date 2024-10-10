@@ -19,6 +19,7 @@ namespace Csql {
     class JoinExpression {
     public:
         JoinExpression(JoinTypes type, std::string _targetEntityName);
+        JoinExpression(Expression *anExpression);
 
         [[nodiscard]] bool apply(const JoinedTuple& tuple) const;
         void addOrExpression(Expression* anExpression);

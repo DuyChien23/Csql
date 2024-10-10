@@ -101,6 +101,12 @@ namespace Csql {
         return index < size() ? &tokens[index] : nullptr;
     }
 
+    Token *Tokenizer::get() {
+        Token* result = peek();
+        checkOne();
+        return result;
+    }
+
     Tokenizer* Tokenizer::check(SqlKeywords aKeyword) {
         if (peek()->type != TokenType::keyword) {
             throw Errors("Unexpected token: " + peek()->data);
@@ -134,4 +140,23 @@ namespace Csql {
         return this;
     }
 
+    bool Tokenizer::consumeAttribute(std::string &tableName, std::string &attributeName) {
+        if (peek()->type != TokenType::identifier) {
+            return false;
+        }
+        consumeType(tableName);
+        if (currentIsChar('.')) {
+            checkOne();
+            consumeType(attributeName);
+        } else {
+            attributeName = tableName;
+            tableName = "";
+        }
+        return true;
+    }
+
+    void Tokenizer::checkOne() {
+        peek();
+        index++;
+    }
 }

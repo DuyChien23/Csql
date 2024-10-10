@@ -14,6 +14,20 @@ namespace Csql {
             : entityName(std::move(_entityName)), attributeName(std::move(_attributeName)) {};
 
         SqlTypes apply(const JoinedTuple& tuple) override {
+            if (attributeName.empty()) {
+                int count = 0;
+                SqlTypes result;
+                for (auto &pair : tuple) {
+                    if (pair.first.second == entityName) {
+                        count++;
+                        result = pair.second;
+                    }
+                }
+
+                if (count == 0) throw Errors("Attribute not found");
+                if (count > 1) throw Errors("Ambiguous attribute");
+                return result;
+            }
             if (!tuple.contains({entityName, attributeName})) throw Errors("Attribute not found");
             return tuple.at({entityName, attributeName});
         }

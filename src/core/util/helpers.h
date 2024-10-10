@@ -19,6 +19,7 @@ namespace Csql {
       less_than,
       equal,
       greater,
+      not_equal,
    };
 
    namespace Helpers {
@@ -159,8 +160,12 @@ namespace Csql {
          static SqlTypeCompareResult compareSqlType(const SqlTypes& lhs,const SqlTypes& rhs) {
             if (lhs.index() != rhs.index()) return SqlTypeCompareResult::cant_compare;
 
-            if (std::holds_alternative<SqlBoolType>(lhs) || std::holds_alternative<SqlNullType>(lhs) || std::holds_alternative<SqlVarcharType>(lhs)) {
+            if (std::holds_alternative<SqlBoolType>(lhs) || std::holds_alternative<SqlNullType>(lhs)) {
                return SqlTypeCompareResult::cant_compare;
+            }
+
+            if (std::holds_alternative<SqlVarcharType>(lhs)) {
+               return lhs == rhs ? SqlTypeCompareResult::equal : SqlTypeCompareResult::not_equal;
             }
 
             if (lhs == rhs) return SqlTypeCompareResult::equal;

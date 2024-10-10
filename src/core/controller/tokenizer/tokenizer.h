@@ -23,6 +23,10 @@ namespace Csql {
             return *this;
         }
 
+        bool operator==(const Token& aToken) const {
+            return type == aToken.type && keyword == aToken.keyword && op == aToken.op && data == aToken.data;
+        }
+
         TokenType       type;
         SqlKeywords     keyword;
         SqlOperators    op;
@@ -37,36 +41,54 @@ namespace Csql {
         [[nodiscard]] size_t size() const;
         Token* tokenAt(size_t anOffset);
 
-        inline Token *peek();
+        Token *peek();
+        Token *get();
+
         Tokenizer* check(SqlKeywords aKeyword);
         Tokenizer* check(std::string aData);
+        void checkOne();
+
         void endBy(std::string aData);
         Tokenizer *reset();
+        bool consumeAttribute(std::string& tableName, std::string& attributeName);
 
-        template<typename T>
-        bool currentIs(const T aData) {
+         bool currentIs() {return false;};
+
+        template<typename T, typename... Args>
+        bool currentIs(const T firstData, const Args... restData) {
+            bool result = currentIs(restData...);
+
+            if constexpr (std::is_same_v<T, TokenType>) {
+                return peek()->type == firstData || result;
+            }
             if constexpr (std::is_same_v<T, SqlKeywords>) {
                 if (peek()->type != TokenType::keyword) {
-                    return false;
+                    return result;
                 }
-                return mSqlKeywords[peek()->data] == aData;
+                return mSqlKeywords[peek()->data] == firstData || result;
+            }
+            if constexpr (std::is_same_v<T, SqlOperators>) {
+                if (peek()->type != TokenType::operators) {
+                    return result;
+                }
+                return mSqlOperators[peek()->data] == firstData || result;
             }
             if constexpr (std::is_same_v<T, int>) {
                 if (peek()->type != TokenType::number) {
-                    return false;
+                    return result;
                 }
-                return std::stoi(peek()->data) == aData;
+                return std::stoi(peek()->data) == firstData || result;
             }
             if constexpr (std::is_same_v<T, float>) {
                 if (peek()->type != TokenType::number) {
-                    return false;
+                    return result;
                 }
-                return std::stod(peek()->data) == aData;
+                return std::stod(peek()->data) == firstData || result;
             }
             if constexpr (std::is_same_v<T, std::string>) {
-                return peek()->data == aData;
+                return peek()->data == firstData || result;
             }
-            return false;
+            return result;
         }
 
         bool currentIsChar(char aChar) {
@@ -77,7 +99,7 @@ namespace Csql {
         }
 
         template<typename T>
-        Tokenizer *skipType(T& aData) {
+        Tokenizer *consumeType(T& aData) {
             if constexpr (std::is_same_v<T, int>) {
                 if (peek()->type != TokenType::number) {
                     throw Errors("Unexpected token: " + peek()->data);
@@ -89,6 +111,12 @@ namespace Csql {
                     throw Errors("Unexpected token: " + peek()->data);
                 }
                 aData = mSqlKeywords[peek()->data];
+            }
+            if constexpr (std::is_same_v<T, SqlOperators>) {
+                if (peek()->type != TokenType::operators) {
+                    throw Errors("Unexpected token: " + peek()->data);
+                }
+                aData = mSqlOperators[peek()->data];
             }
             if constexpr (std::is_same_v<T, float>) {
                 if (peek()->type != TokenType::number) {

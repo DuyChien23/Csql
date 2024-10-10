@@ -17,13 +17,15 @@ namespace Csql {
             &SqlParser::createEntityStatement,
             &SqlParser::describeEntityStatement,
             &SqlParser::dropEntityStatement,
-            &SqlParser::insertStatement
+            &SqlParser::insertStatement,
+            &SqlParser::selectStatement
         };
 
         Statement* createEntityStatement(Tokenizer *aTokenizer);
         Statement* describeEntityStatement(Tokenizer *aTokenizer);
         Statement* dropEntityStatement(Tokenizer *aTokenizer);
         Statement* insertStatement(Tokenizer *aTokenizer);
+        Statement* selectStatement(Tokenizer *aTokenizer);
     };
 }
 
