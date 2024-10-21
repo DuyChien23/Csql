@@ -10,63 +10,42 @@
 #include "../io_manager/io_manager.h"
 
 namespace Csql {
+    class SlottedPage;
+    using SharedPagePtr = std::shared_ptr<SlottedPage>;
+
+    enum class PageType {
+        free_page = 'F',
+        internal_b_plus_node = 'I',
+        leaf_b_plus_node = 'L',
+    };
+
+    constexpr uint32_t slottedPageHeaderDefaultSize = 1 + sizeof(uint32_t) * 4;
+
     class SlottedPage : public IOManager {
-    protected:
-        //index of block in entity file
-        uint32_t pageIndex;
-
-        //next page depend this page is free_page or data_page
-        uint32_t nextPage = 0;
-
-        //begin of free space
-        uint32_t beginFreeSpace;
-
-        //end of free space
-        uint32_t endFreeSpace = Configs::storageUnitSize;
-
-        //number of slots in this page
-        uint32_t numSlots = 0;
-
-        std::vector<uint32_t> slots;
-
-        std::vector<Tuple> tuples;
-
-        SharedEntityPtr theEntity = nullptr;
-
     public:
-        SlottedPage(uint64_t pageIndex, SharedEntityPtr entity) : pageIndex(pageIndex), theEntity(entity), beginFreeSpace(getHeaderSize()) {};
+        SlottedPage(uint64_t _pageIndex, PageType _pageType, SharedEntityPtr _entity, uint32_t _beginFreeSpace = 0);
+        SlottedPage(uint64_t _pageIndex, SharedEntityPtr _entity);
+        SlottedPage() = default;
+        ~SlottedPage() override = default;
 
-        ~SlottedPage() = default;
+        void loadType();
+        void saveType();
 
         //Refreshes the variables based on the raw data array
-        void refresh();
+        virtual void refresh();
 
         //Saves variables to the raw data array
-        void save();
+        virtual void save();
 
-        uint32_t getHeaderSize();
-        uint32_t getFreeSpace();
-        Tuple* readTuple(uint32_t iSlot);
+        [[nodiscard]] uint32_t getFreeSpace() const;
+        Tuple readTuple(uint32_t iSlot);
         void writeTuple(uint32_t iSlot);
-        bool addTuple(const Tuple& aTuple);
+        virtual void addTuple(const Tuple& aTuple) {};
+        virtual void splitNode(SharedPagePtr left) {};
         void deleteTuple(u_int32_t iSlot);
+        int lower_bound(const BPlusKey &key, int begin);
 
-
-        [[nodiscard]] uint32_t get_page_index() const {
-            return pageIndex;
-        }
-
-        void set_page_index(const uint32_t page_index) {
-            pageIndex = page_index;
-        }
-
-        [[nodiscard]] uint32_t get_next_page() const {
-            return nextPage;
-        }
-
-        void set_next_page(const uint32_t next_page) {
-            nextPage = next_page;
-        }
+        void reassignData();
 
         [[nodiscard]] uint32_t get_begin_free_space() const {
             return beginFreeSpace;
@@ -96,16 +75,8 @@ namespace Csql {
             return slots;
         }
 
-        void set_slots(std::vector<uint32_t> const slots) {
-            this->slots = slots;
-        }
-
         [[nodiscard]] std::vector<Tuple>& get_tuples() {
             return tuples;
-        }
-
-        void set_tuples(std::vector<Tuple> const tuples) {
-            this->tuples = tuples;
         }
 
         [[nodiscard]] SharedEntityPtr& get_the_entity() {
@@ -115,9 +86,42 @@ namespace Csql {
         void set_the_entity(const SharedEntityPtr &the_entity) {
             theEntity = the_entity;
         }
-    };
 
-    using SharedPagePtr = std::shared_ptr<SlottedPage>;
+         BPlusKey get_btree_key();
+
+        //type of page
+        PageType pageType = PageType::free_page;
+
+        //index of page
+        uint32_t pageIndex;
+
+        //index of prev node if this node is leaf
+        uint32_t prevLeaf = 0;
+
+        //index of next node if this node is leaf
+        uint32_t nextLeaf = 0;
+
+        //index of parent node
+        uint32_t parentIndex = 0;
+
+        friend class LeafBPlusNode;
+        friend class InternalBPlusNode;
+    protected:
+        //begin of free space
+        uint32_t beginFreeSpace;
+
+        //end of free space
+        uint32_t endFreeSpace;
+
+        //number of slots in this page
+        uint32_t numSlots = 0;
+
+        std::vector<uint32_t> slots;
+
+        std::vector<Tuple> tuples;
+
+        SharedEntityPtr theEntity = nullptr;
+    };
 }
 
 

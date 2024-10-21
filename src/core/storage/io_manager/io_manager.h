@@ -5,9 +5,10 @@
 #ifndef IO_MANAGER_H
 #define IO_MANAGER_H
 
-#include <fstream>
 #include <memory>
 #include <cstring>
+#include <functional>
+#include <vector>
 
 #include "../../util/configs.h"
 #include "../../util/types.h"
@@ -16,8 +17,7 @@ namespace Csql {
     class IOManager {
     public:
         IOManager() = default;
-
-        ~IOManager() = default;
+        virtual ~IOManager() = default;
 
         //Write data of block to disk
         void encode(std::fstream& anOutput);
@@ -25,17 +25,12 @@ namespace Csql {
         //Read data of block from disk
         void decode(std::fstream& anInput);
 
-        //Refreshes the variables based on the raw data array
-        void refresh() {};
-
-        //Saves variables to the raw data array
-        void save() {};
-
         void resetBufferOffset();
+
+        char rawData[Configs::storageUnitSize] = {};
 
     protected:
         //Data temp
-        char rawData[Configs::storageUnitSize];
 
         uint32_t bufferOffset = 0;
 
@@ -45,6 +40,16 @@ namespace Csql {
             std::memcpy(rawData + bufferOffset, reinterpret_cast<char*>(&aValue), sizeof aValue);
             bufferOffset += sizeof aValue;
         }
+
+        template<typename T>
+        void write(const std::vector<T>& aValue) {
+            write(aValue.size());
+            for (const auto &value : aValue) {
+                write(value);
+            }
+        }
+
+        void write(const PairKeyElement& aValue);
 
         void write(const std::string& aString);
 
@@ -56,6 +61,18 @@ namespace Csql {
             std::memcpy(reinterpret_cast<char*>(&aValue), rawData + bufferOffset, sizeof aValue);
             bufferOffset += sizeof aValue;
         }
+
+        template<typename T>
+        void read(std::vector<T>& aValue) {
+            size_t size;
+            read(size);
+            aValue.resize(size);
+            for (auto &value : aValue) {
+                read(value);
+            }
+        }
+
+        void read(PairKeyElement& aValue);
 
         void read(std::string& aString);
 

@@ -4,7 +4,9 @@
 
 #ifndef STORAGE_H
 #define STORAGE_H
+#include <cassert>
 #include <filesystem>
+#include <iostream>
 
 #include "lru_cache/lru_cache.h"
 
@@ -15,6 +17,33 @@ namespace Csql {
     using PageVisitor = std::function<void(SharedPagePtr& aPage)>;
 
     using TupleVisitor = std::function<void(Tuple& tuple)>;
+
+    using SplitNodeType = std::tuple<BPlusKey, SharedPagePtr, SharedPagePtr>;
+
+    struct BtreeLeafIterator {
+        int index;
+        SharedPagePtr page;
+
+        BtreeLeafIterator(int _index, SharedPagePtr _page) {
+            assert(_page == nullptr || _page->pageType == PageType::leaf_b_plus_node);
+            index = _index;
+            page = std::move(_page);
+        };
+
+        bool operator!=(const BtreeLeafIterator& other) const {
+            if (index != other.index) return true;
+            if (index == -1) return false;
+            return page->pageIndex != other.page->pageIndex;
+        }
+
+        bool operator==(const BtreeLeafIterator& other) const {
+            return !(*this != other);
+        }
+
+        Tuple& operator*() {
+            return page->get_tuples().at(index);
+        }
+    };
 
     class Storage {
     public:
@@ -89,6 +118,11 @@ namespace Csql {
             theEntity->encode(f);
         }
 
+        void saveEntity(const std::string& entityName) {
+            assert(mEntity.contains(entityName));
+            saveEntity(getEntity(entityName));
+        }
+
         std::string createKey(std::string entityName, uint32_t pageIndex) {
             return entityName + '#' + std::to_string(pageIndex);
         }
@@ -103,18 +137,29 @@ namespace Csql {
         void readPage(const std::string& entityName, uint32_t pageIndex, SharedPagePtr &aPage);
         void readPageUncache(const std::string& entityName, uint32_t pageIndex, SharedPagePtr &aPage);
 
-        void deleteEntityFile(std::string entityName);
+        void deleteEntityFile(const std::string& entityName);
         void eachEntity(const EntityVisitor& entityVisitor);
 
         // get 1 free page
         SharedPagePtr popFreePage(const std::string& entityName);
-        // add aPage to data page zone
-        void pushDataPage(const std::string &entityName, SharedPagePtr& aPage);
-        // move data page to free zone
-        void moveDataPageToFree(SharedPagePtr& theDataPage, SharedPagePtr& theLastPage);
 
-        void eachDataPage(const std::string& entityName, const PageVisitor& pageVisitor);
-        void eachTuple(const std::string& entityName, const TupleVisitor& tupleVisitor, bool isUpdate = false);
+        //===========================================B+Tree=Interface=========================================
+        void setBTree(IndexingMetadata& indexingMetadata, Tuple tuple);
+        SharedPagePtr findLeaf(const IndexingMetadata& indexingMetadata, const BPlusKey& key);
+        BtreeLeafIterator searchBtree(const IndexingMetadata& indexingMetadata, BPlusKey& key);
+        BtreeLeafIterator beginLeaf(const IndexingMetadata &indexingMetadata);
+        BtreeLeafIterator& endLeaf();
+        BtreeLeafIterator& nextLeaf(BtreeLeafIterator& iter);
+
+        void printBtree(IndexingMetadata& indexingMetadata, int nodeIndex = 0, std::string _prefix = "", bool _last = true);
+
+    private:
+        //===========================================B+Tree=Internal=========================================
+        void insertBtree(IndexingMetadata& indexingMetadata, SplitNodeType result);
+        SplitNodeType splitLeaf(SharedPagePtr node);
+        SplitNodeType splitInternal(SharedPagePtr node);
+
+        BtreeLeafIterator endLeafBnode = BtreeLeafIterator(-1, nullptr);
     };
 }
 

@@ -4,35 +4,53 @@
 
 #include "entity.h"
 
+#include <cassert>
+
 namespace Csql {
     void Entity::save() {
         bufferOffset = 0;
 
         write(this->name);
-        write(this->firstDataPage);
         write(this->firstFreePage);
         write(this->nPage);
+        write(this->clusteredKey);
 
         write(this->attributes.size());
-
         for (auto &attribute : this->attributes) {
-           writeAttribute(attribute);
+            writeAttribute(attribute);
+        }
+
+        write(this->indexingMetadata.size());
+        for (auto &index : this->indexingMetadata) {
+            write(index.root);
+            write(index.isClustered);
+            write(index.keys);
         }
     }
 
     void Entity::refresh() {
         this->bufferOffset = 0;
-        uint64_t attributeCount;
 
         read(this->name);
-        read(this->firstDataPage);
         read(this->firstFreePage);
         read(this->nPage);
+        read(this->clusteredKey);
+
+        uint64_t attributeCount;
         read(attributeCount);
         attributes.clear();
-
         for (int i = 0; i < attributeCount; ++i) {
             attributes.push_back(readAttribute());
+        }
+
+        uint64_t indexingMetadataCount;
+        read(indexingMetadataCount);
+        indexingMetadata.resize(indexingMetadataCount);
+        for (auto &index : indexingMetadata) {
+            index.entityName = this->name;
+            read(index.root);
+            read(index.isClustered);
+            read(index.keys);
         }
     }
 
@@ -120,6 +138,13 @@ namespace Csql {
         }
     }
 
+    void Entity::eachIndexing(const IndexingVisitor &indexingVisitor) {
+        assert(indexingMetadata.begin()->isClustered);
+        for (auto &index : indexingMetadata) {
+            indexingVisitor(index, index.isClustered);
+        }
+    }
+
     //-----------------------------GETER AND SETTER--------------------------------
 
     Attribute* Entity::getAttribute(const std::string& name) {
@@ -131,8 +156,8 @@ namespace Csql {
         return nullptr;
     }
 
-    AttributeList* Entity::getAttributes() {
-        return &attributes;
+    AttributeList& Entity::getAttributes() {
+        return attributes;
     }
 
     void Entity::addAttribute(Attribute *attribute) {
@@ -141,31 +166,32 @@ namespace Csql {
         }
     }
 
+    void Entity::addIndexingMetadata(std::string key, bool isClustered) {
+        addIndexingMetadata(std::vector({std::move(key)}), isClustered);
+    }
+
+    void Entity::addIndexingMetadata(std::vector<std::string> keys, bool isClustered) {
+        for (auto &index : indexingMetadata) {
+            if (index.keys == keys || (index.isClustered && isClustered)) {
+                return;
+            }
+        }
+        indexingMetadata.emplace_back(this->name, std::move(keys), isClustered);
+    }
+
     void Entity::setDatabaseName(std::string dbName) {
-        this->dbName = dbName;
-    }
-
-    void Entity::setFirstDataPage(uint64_t firstDataBlock) {
-        this->firstDataPage = firstDataBlock;
-    }
-
-    uint64_t Entity::getFirstDataPage() {
-        return firstDataPage;
+        this->dbName = std::move(dbName);
     }
 
     void Entity::setFirstFreePage(uint64_t firstFreeBlock) {
         this->firstFreePage = firstFreeBlock;
     }
 
-    bool Entity::hasDataPage() {
-        return firstDataPage;
-    }
-
-    bool Entity::hasFreePage() {
+    bool Entity::hasFreePage() const {
         return firstFreePage;
     }
 
-    uint64_t Entity::getFirstFreePage() {
+    uint64_t Entity::getFirstFreePage() const {
         return firstFreePage;
     }
 
@@ -175,5 +201,13 @@ namespace Csql {
 
     std::string Entity::getName() {
         return name;
+    }
+
+    void Entity::setClusteredKey(const std::string &name) {
+        clusteredKey = name;
+    }
+
+    std::string Entity::getClusteredKey() {
+        return clusteredKey;
     }
 }

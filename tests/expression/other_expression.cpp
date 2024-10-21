@@ -5,6 +5,8 @@
 #include "expression_test.h"
 #include "../../src/core/storage/expression/other_expression.h"
 
+#include "../../src/core/util/errors.h"
+
 class OtherExpressionTest : public ::testing::Test {
 protected:
     // Khởi tạo đối tượng MockExpression

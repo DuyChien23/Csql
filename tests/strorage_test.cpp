@@ -4,93 +4,168 @@
 
 #include <gtest/gtest.h>
 #include <filesystem>
+#include <random>
 
 #include "../src/core/storage/storage.h"
+#include "../src/core/storage/page/b_plus_node/leaf_b_plus_node.h"
+#include "../src/core/util/helpers.h"
 
 using namespace Csql;
 
-namespace Csql {
-    class StorageTest : Storage {
-    public:
-        StorageTest(std::string storageName) : Storage(storageName) {};
+class StorageTest0 : public Storage, public ::testing::Test {
+protected:
+    StorageTest0() : Storage("a2k22") {
+        auto dbDict = "Databases/" + this->name;
+        std::filesystem::remove_all(dbDict);
+        std::filesystem::create_directory(dbDict);
 
-        std::vector<std::string>* getListEntityNamesForTest() {
-            return getListEntityNames();
-        };
+        theEntityName = "students";
 
-        SharedEntityPtr getTable(std::string entityName) {
-            return getEntity(entityName);
-        }
+        std::ofstream f(createEntityPath(theEntityName));
+        f.close();
 
-        void readP(const std::string &entityName, uint32_t pageIndex, SharedPagePtr& aPage) {
-            readPage(entityName, pageIndex, aPage);
-        }
+        SharedEntityPtr entity = std::make_shared<Entity>(this->name, theEntityName);
+        entity->addIndexingMetadata("id", true);
+        entity->eachIndexing([&](IndexingMetadata& indexingMetadata, bool _) {
+           indexingMetadata.root = 3;
+        });
+        saveEntity(entity);
 
-        void writeP(SharedPagePtr aPage) {
-            writePage(aPage);
-        }
+        pageIndex = 13;
+        nextLeafPage = 16;
+        SharedPagePtr page = std::make_shared<LeafBPlusNode>(pageIndex, entity);
+        dynamic_cast<LeafBPlusNode*>(page.get())->nextLeaf = nextLeafPage;
+        writePage(page);
     };
+
+    std::string theEntityName;
+    uint32_t pageIndex;
+    uint32_t nextLeafPage;
+};
+
+TEST_F(StorageTest0, GetListEntityNames) {
+    auto entityNames = getListEntityNames();
+    ASSERT_NE(entityNames, nullptr);
 }
 
-void makeFile(std::string path) {
-    std::remove(path.c_str());
-    std::ofstream file1(path);
-    file1.close();
+TEST_F(StorageTest0, GetFstream) {
+    std::fstream& fstream = getFstream(theEntityName);
+    ASSERT_TRUE(fstream.is_open());
 }
 
-TEST(STORAGE_TEST, TEST_GET_LIST_ENTITY_NAMES) {
-    std::string dirPath = "Databases/a2k22";
-
-    std::filesystem::create_directory("Databases");
-    std::filesystem::create_directory(dirPath);
-
-    std::vector<std::string> sampleNames = {"student", "score", "subject"};
-
-    for (const auto &entityName : sampleNames) {
-        makeFile(dirPath + "/" + entityName + ".csql");
-    }
-
-    StorageTest storage_test("a2k22");
-
-    std::vector<std::string>* actualNames = storage_test.getListEntityNamesForTest();
-
-    sort(sampleNames.begin(), sampleNames.end());
-    sort(actualNames->begin(), actualNames->end());
-
-    EXPECT_EQ(sampleNames.size(), actualNames->size());
-
-    for (int i = 0; i < sampleNames.size(); ++i) {
-        EXPECT_EQ(sampleNames[i], actualNames->at(i));
-    }
+TEST_F(StorageTest0, GetEntity) {
+    auto entity = getEntity(theEntityName);
+    ASSERT_NE(entity, nullptr);
+    uint32_t root;
+    entity->eachIndexing([&](IndexingMetadata& indexingMetadata, bool _) {
+        root = indexingMetadata.root;
+    });
+    ASSERT_EQ(root, 3);
 }
 
-TEST(STORAGE_TEST, TEST_READ_WRITE_PAGE) {
-    std::string dirPath = "Databases/a2k24";
-
-    std::filesystem::create_directory("Databases");
-    std::filesystem::create_directory(dirPath);
-
-    std::string entityName = "mytest";
-    makeFile(dirPath + "/" + entityName + ".csql");
-
-    StorageTest storage_test("a2k24");
-    SharedEntityPtr theEntity = std::make_shared<Entity>("a2k24", entityName);
-    theEntity->setFirstDataPage(1);
-    theEntity->setFirstFreePage(0);
-    theEntity->save();
-    std::fstream file(dirPath + "/" + entityName + ".csql", MODIFYING_DISK_MODE);
-    theEntity->encode(file);
-
-    SharedPagePtr thePage = std::make_shared<SlottedPage>(1, theEntity);
-
-    uint32_t nextPage, beginFreeSpace, endFreeSpace, numSlots;
-    thePage->set_next_page(nextPage = 3);
-
-    storage_test.writeP(thePage);
-
-    SharedPagePtr aPage;
-    storage_test.readP(entityName, 1, aPage);
-
-    EXPECT_EQ(aPage->get_next_page(), nextPage);
+TEST_F(StorageTest0, CreateKey) {
+    std::string key = createKey("test_entity", 1);
+    ASSERT_EQ(key, "test_entity#1");
 }
 
+TEST_F(StorageTest0, CreateEntityPath) {
+    std::string path = createEntityPath("test_entity");
+    ASSERT_EQ(path, "Databases/a2k22/test_entity.csql");
+}
+
+TEST_F(StorageTest0, ReadPage) {
+    SharedPagePtr page;
+    readPage(theEntityName, pageIndex, page);
+    ASSERT_EQ(page->pageIndex, pageIndex);
+    ASSERT_EQ(dynamic_cast<LeafBPlusNode*>(page.get())->nextLeaf, nextLeafPage);
+}
+
+class StorageTest1 : public Storage, public ::testing::Test {
+protected:
+    StorageTest1() : Storage("a2k23") {
+        auto dbDict = "Databases/" + this->name;
+        std::filesystem::remove_all(dbDict);
+        std::filesystem::create_directory(dbDict);
+
+        theEntityName = "students";
+
+        SharedEntityPtr entity = std::make_shared<Entity>(this->name, theEntityName);
+        entity->addAttribute((new Attribute)->setName("id")->setType(DataTypes::int_type)->setPrimary(true));
+        entity->addAttribute((new Attribute)->setName("name")->setType(DataTypes::varchar_type));
+        entity->addAttribute((new Attribute)->setName("email")->setType(DataTypes::varchar_type)->setUnique(true));
+
+        entity->addIndexingMetadata("id", true);
+        entity->addIndexingMetadata("email", false);
+
+        std::ofstream f(createEntityPath(theEntityName));
+        f.close();
+        saveEntity(entity);
+
+
+        getEntity(theEntityName)->eachIndexing([&](IndexingMetadata& indexingMetadata, bool isClustered) {
+            if (isClustered) {
+                auto run = [&](int i) {
+                    auto temp = std::to_string(i);
+
+                    Tuple tuple = {
+                        std::make_pair(SpecialKey::BTREE_KEY, BPlusKey(i)),
+                        std::make_pair("id", SqlIntType(i)),
+                        std::make_pair("name", SqlVarcharType("hanh") + temp),
+                        std::make_pair("email", SqlVarcharType("chien121803@cvp.vn") + temp)
+                    };
+
+                    setBTree(indexingMetadata, tuple);
+                };
+
+                std::vector<int> id;
+                for (int i = 1; i <= limit; ++i) id.push_back(i);
+
+                std::shuffle(id.begin(), id.end(), std::mt19937(std::random_device()()));
+
+                for (auto i : id) {
+                    run(i);
+                    if (false) {
+                        std::cerr << "======================================: [" + std::to_string(i) + "]" << std::endl;
+                        printBtree(indexingMetadata);
+                    }
+                }
+            }
+        });
+
+
+        saveEntity(theEntityName);
+    };
+
+    std::string theEntityName;
+    int limit = 100;
+};
+
+TEST_F(StorageTest1, SelectBtree) {
+    getEntity(theEntityName)->eachIndexing([&](IndexingMetadata& indexingMetadata, bool isClustered) {
+        if (isClustered) {
+            for (int i = 1; i <= limit; ++i) {
+                auto key = BPlusKey(i);
+                auto iter = searchBtree(indexingMetadata, key);
+                ASSERT_NE(iter, endLeaf());
+                ASSERT_EQ(Helpers::TupleHandle::getBTreeKey((*iter)), key);
+            }
+        }
+    });
+}
+
+TEST_F(StorageTest1, BeginOfBtree) {
+    getEntity(theEntityName)->eachIndexing([&](IndexingMetadata& indexingMetadata, bool isClustered) {
+        if (isClustered) {
+            auto key = BPlusKey(1);
+            auto iter = searchBtree(indexingMetadata, key);
+            ASSERT_NE(iter, endLeaf());
+
+            int i = 1;
+            while (iter != endLeaf()) {
+                ASSERT_EQ(Helpers::TupleHandle::getBTreeKey(*iter), BPlusKey(i));
+                i++;
+                iter = nextLeaf(iter);
+            }
+        }
+    });
+}

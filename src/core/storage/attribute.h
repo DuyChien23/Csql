@@ -10,6 +10,12 @@
 #include "../util/types.h"
 
 namespace Csql {
+    namespace SpecialKey {
+        const std::string BTREE_KEY = "bree_key_2303";
+        const std::string HIDDEN_KEY = "hidden_key_2303";
+        const std::string CHILD_BTREE_KEY = "bnode_child_2303";
+    }
+
     class Reference {
     public:
         Reference() {};

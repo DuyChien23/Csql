@@ -36,8 +36,8 @@ namespace Csql {
 
     private:
         void validateCreateTable(const SharedEntityPtr& anEntityPtr);
-        bool validateInsert(std::ostream &anOutput, const SharedEntityPtr& theEntity, const Tuple &aTuple);
-        void doInsert(std::ostream &anOutput, std::string aEntityName, const Tuple &theTuple);
+        void validateInsert(std::ostream &anOutput, const SharedEntityPtr& theEntity, const Tuple &aTuple);
+        void doInsert(std::ostream &anOutput, std::string aEntityName, Tuple &theTuple);
         void validateTableExisted(std::string aEntityName);
         void validateTableNotExisted(std::string aEntityName);
     };
