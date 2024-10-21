@@ -5,6 +5,8 @@
 #include "expression_test.h"
 #include "../../src/core/storage/expression/binary_expression.h"
 
+#include "../../src/core/util/errors.h"
+
 // Test Fixture
 class BinaryExpressionTest : public ::testing::Test {
 protected:

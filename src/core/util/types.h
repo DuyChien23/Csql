@@ -9,6 +9,8 @@
 #include <fstream>
 #include <map>
 
+#include "b_plus_key.h"
+
 #define MODIFYING_DISK_MODE std::fstream::in | std::fstream::out | std::fstream::binary
 #define CREATING_DISK_MODE std::fstream::in | std::fstream::out | std::fstream::binary | std::fstream::trunc
 
@@ -20,6 +22,7 @@ namespace Csql {
         bool_type = 'B',
         datetime_type = 'D',
         float_type = 'F',
+        b_plus_key = 'K'
     };
 
     using SqlNullType = std::monostate;
@@ -29,7 +32,7 @@ namespace Csql {
     using SqlDatetimeType = uint64_t;
     using SqlFloatType = double;
 
-    using SqlTypes = std::variant<SqlNullType, SqlIntType, SqlVarcharType, SqlBoolType, SqlDatetimeType, SqlFloatType>;
+    using SqlTypes = std::variant<SqlNullType, SqlIntType, SqlVarcharType, SqlBoolType, SqlDatetimeType, SqlFloatType, BPlusKey>;
 
     using Tuple = std::map<std::string, SqlTypes>;
 

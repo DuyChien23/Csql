@@ -3,6 +3,9 @@
 //
 
 #include "io_manager.h"
+
+#include <unistd.h>
+
 #include "../../util/errors.h"
 #include "../page/slotted_page.h"
 
@@ -16,9 +19,20 @@ namespace Csql {
 
     void IOManager::decode(std::fstream &anInput) {
         anInput.read(rawData, Configs::storageUnitSize);
-        refresh();
 
         if (!anInput.good()) throw Errors("Can't read data from disk");
+    }
+
+    void IOManager::write(const PairKeyElement &aValue) {
+        write(aValue.first);
+
+        if (aValue.first == int_type) {
+            write(std::get<int64_t>(aValue.second));
+        } else if (aValue.first == float_type) {
+            write(std::get<double>(aValue.second));
+        } else {
+            write(std::get<std::string>(aValue.second));
+        }
     }
 
     void IOManager::write(const std::string &aString) {
@@ -55,10 +69,36 @@ namespace Csql {
                 write(value);
                 break;
             }
+            case DataTypes::b_plus_key: {
+                BPlusKey value = std::get<BPlusKey>(aValue);
+                write(value.size());
+                for (auto &element : value) {
+                    write(element);
+                }
+                break;
+            }
             default:
                 break;
         }
     }
+
+    void IOManager::read(PairKeyElement &aValue) {
+        read(aValue.first);
+        if (aValue.first == int_type) {
+            int64_t value;
+            read(value);
+            aValue.second = value;
+        } else if (aValue.first == float_type) {
+            double value;
+            read(value);
+            aValue.second = value;
+        } else {
+            std::string value;
+            read(value);
+            aValue.second = value;
+        }
+    }
+
 
     void IOManager::read(std::string &aString) {
         uint32_t length;
@@ -67,7 +107,7 @@ namespace Csql {
         bufferOffset += length;
     }
 
-    void IOManager::read(SqlTypes &aValue, DataTypes type) {
+    void IOManager::read(SqlTypes& aValue, DataTypes type) {
         switch (type) {
             case DataTypes::int_type: {
                 SqlIntType value;
@@ -96,6 +136,17 @@ namespace Csql {
             case DataTypes::varchar_type: {
                 SqlVarcharType value;
                 read(value);
+                aValue = value;
+                break;
+            }
+            case DataTypes::b_plus_key: {
+                BPlusKey value;
+                size_t sz = 0;
+                read(sz);
+                value.resize(sz);
+                for (auto &element : value) {
+                    read(element);
+                }
                 aValue = value;
                 break;
             }

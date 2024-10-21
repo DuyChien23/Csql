@@ -9,6 +9,7 @@
 #include "../util/helpers.h"
 #include "../view/query_result_view.h"
 #include "../view/table_view.h"
+#include "page/b_plus_node/leaf_b_plus_node.h"
 
 namespace Csql {
     void Database::createTable(std::ostream &anOutput, SharedEntityPtr &anEntity) {
@@ -16,6 +17,14 @@ namespace Csql {
         validateCreateTable(anEntity);
 
         mEntity[anEntity->getName()] = anEntity;
+
+        anEntity->addIndexingMetadata(anEntity->getClusteredKey(), true);
+
+        anEntity->eachAttribute([&](Attribute* anAttribute) {
+            if ((anAttribute->isPrimary() || anAttribute->isUnique()) && anAttribute->getName() != anEntity->getClusteredKey()) {
+                anEntity->addIndexingMetadata(anAttribute->getName(), false);
+            }
+        });
 
         // make entity file
         std::ofstream f(createEntityPath(anEntity->getName()));
@@ -28,11 +37,20 @@ namespace Csql {
     }
 
     void Database::validateCreateTable(const SharedEntityPtr &anEntityPtr) {
-        int cntPrimaryKey = 0;
+        Attribute* primaryAttribute = nullptr;
+        Attribute* uniqueAttribute = nullptr;
         bool valid = true;
         anEntityPtr->eachAttribute([&](Attribute *anAtribute) {
             if (anAtribute->isPrimary()) {
-                cntPrimaryKey ++;
+                if (!primaryAttribute) {
+                    primaryAttribute = anAtribute;
+                } else {
+                    throw Errors("Too many primary keys");
+                }
+            }
+
+            if (anAtribute->isUnique() && !uniqueAttribute) {
+                uniqueAttribute = anAtribute;
             }
 
             if (anAtribute->getReference()) {
@@ -49,12 +67,17 @@ namespace Csql {
             }
         });
 
-        if (cntPrimaryKey > 1) {
-            throw Errors("Too many primary keys");
-        }
         if (!valid) {
             throw Errors("Table reference not found");
         }
+
+        if (primaryAttribute) uniqueAttribute = primaryAttribute;
+
+        if (!uniqueAttribute) {
+            uniqueAttribute = (new Attribute())->setName(SpecialKey::HIDDEN_KEY)->setType(DataTypes::int_type)->setPrimary(true);
+            anEntityPtr->addAttribute(uniqueAttribute);
+        }
+        anEntityPtr->setClusteredKey(uniqueAttribute->getName());
     }
 
     void Database::showTables(std::ostream &anOutput) {
@@ -68,14 +91,13 @@ namespace Csql {
     void Database::describeTable(std::ostream &anOutput, std::string aEntityName) {
         validateTableExisted(aEntityName);
 
-        TableView theTableView("Field", "Type", "Null", "Key", "Default", "Extra");
+        TableView theTableView("Field", "Type", "Null", "Key", "Extra");
         getEntity(aEntityName)->eachAttribute([&](Attribute* anAttribute) {
            theTableView.addData(
                anAttribute->getName(),
-               "anAttribute->getType()",
+               Helpers::SqlTypeHandle::covertDataTypeToString(anAttribute->getType()),
                anAttribute->isNull() ? "YES" : "NO",
-               anAttribute->isPrimary() ? "PRI" : "",
-               "",
+               anAttribute->isPrimary() ? "PRI" : anAttribute->isUnique() ? "UNI" : "",
                anAttribute->getAutoIncrement() ? "auto_increment" : "");
         });
         theTableView.show(anOutput);
@@ -98,16 +120,12 @@ namespace Csql {
         SharedEntityPtr theEntity = getEntity(aEntityName);
         Tuple theTuple;
 
-        if (!hasAtrributeName && theEntity->getAttributes()->size() != aValues.size()) {
-            throw Errors("Number of columns not match");
-        }
-
         for (int i = 0; i < aValues.size(); i++) {
             Attribute* theAttribute;
             if (hasAtrributeName) {
                 theAttribute = theEntity.get()->getAttribute(aValues[i].first);
             } else {
-                theAttribute = theEntity->getAttributes()->at(i);
+                theAttribute = theEntity->getAttributes().at(i);
             }
             if (theAttribute == nullptr) {
                 throw Errors("Column not found");
@@ -115,38 +133,45 @@ namespace Csql {
             theTuple[theAttribute->getName()] = Helpers::SqlTypeHandle::covertStringToSqlType( theAttribute->getType(), aValues[i].second);
         }
 
+        theEntity->eachAttribute([&](Attribute* anAttribute) {
+            if (!theTuple.contains(anAttribute->getName()) && !anAttribute->isNull()) {
+                if (anAttribute->isAutoIncrement()) {
+                    theTuple[anAttribute->getName()] = SqlIntType(anAttribute->getAutoIncrement());
+                } else {
+                    throw Errors("Key " + anAttribute->getName() + " not null");
+                }
+            }
+        });
+
         doInsert(anOutput, aEntityName, theTuple);
     }
 
-    void Database::doInsert(std::ostream &anOutput, std::string aEntityName, const Tuple &theTuple) {
+    void Database::doInsert(std::ostream &anOutput, std::string aEntityName, Tuple &theTuple) {
         SharedEntityPtr theEntity = getEntity(aEntityName);
 
-        if (!validateInsert(anOutput, theEntity, theTuple)) {
+        try {
+            validateInsert(anOutput, theEntity, theTuple);
+        } catch (Errors e) {
+            QueryResultView(0, e.what()).show(anOutput);
             return;
         }
 
         //=====================INSERT=========================================
-        bool inserted = false;
-        eachDataPage(aEntityName, [&](SharedPagePtr& aPage) {
-            if (inserted) return;
-            if (aPage->addTuple(theTuple)) {
-                inserted = true;
-                writePage(aPage);
+        theEntity->eachIndexing([&](IndexingMetadata& indexingMetadata, bool isClustered) {
+            if (isClustered) {
+                Helpers::TupleHandle::addBNodeKey(theTuple, indexingMetadata);
+                setBTree(indexingMetadata, theTuple);
+            } else {
+                setBTree(indexingMetadata, Helpers::TupleHandle::makeSecondaryTuple(theTuple, indexingMetadata, theEntity->getClusteredKey()));
             }
         });
-        if (!inserted) {
-            SharedPagePtr freePage = popFreePage(aEntityName);
-            freePage->addTuple(theTuple);
-            pushDataPage(aEntityName, freePage);
-            writePage(freePage);
-        }
 
         saveEntity(theEntity);
 
         QueryResultView(1, "inserted tuple").show(anOutput);
     }
 
-    bool Database::validateInsert(std::ostream &anOutput, const SharedEntityPtr& theEntity, const Tuple &theTuple) {
+    void Database::validateInsert(std::ostream &anOutput, const SharedEntityPtr& theEntity, const Tuple &theTuple) {
         theEntity->eachAttribute([&](Attribute* anAttribute) {
             if (!theTuple.contains(anAttribute->getName())) {
                 if (!anAttribute->isNull()) {
@@ -155,39 +180,32 @@ namespace Csql {
             }
         });
 
-        //=====================CHECK-FOREIGN-KEY============================
-        for (auto &attribute : *theEntity->getAttributes()) {
-            if (attribute->getReference()) {
-                bool foundReference = false;
-
-                eachTuple(attribute->getReference()->getEntityName(), [&](Tuple& aTuple) -> bool {
-                    if (theTuple.at(attribute->getName()) == aTuple[attribute->getReference()->getAttributeName()]) {
-                        foundReference = true;
-                    }
-                });
-
-                if (!foundReference) {
-                    QueryResultView(0, "Not found reference for column " + attribute->getName(), false).show(anOutput);
-                    return false;
-                }
-            }
-        }
-
-        //=====================CHECK-PRIMARY-UNIQUE-KEY======================
-        bool dulicated = false;
-        eachTuple(theEntity->getName(), [&](Tuple& aTuple) -> bool {
-            for (auto &attribute : *theEntity->getAttributes()) {
-                if (attribute->isUnique() && theTuple.at(attribute->getName()) == aTuple[attribute->getName()]) {
-                    dulicated = true;
-                    QueryResultView(0, "duplicated column " + attribute->getName(), false).show(anOutput);
-                }
+        theEntity->eachIndexing([&](IndexingMetadata& indexingMetadata, bool _) {
+            auto key = Helpers::TupleHandle::genBNodeKey(theTuple, indexingMetadata);
+            auto searchPage = searchBtree(indexingMetadata, key);
+            if (searchPage != endLeaf() && Helpers::TupleHandle::getBTreeKey(*searchPage) == key) {
+                throw Errors("Duplicate key");
             }
         });
-        if (dulicated) {
-            return false;
-        }
 
-        return true;
+        //=====================CHECK-FOREIGN-KEY============================
+        for (auto &attribute : theEntity->getAttributes()) {
+            if (attribute->getReference()) {
+                auto referrenceEntityName = attribute->getReference()->getEntityName();
+                auto referrenceAttributeName = attribute->getReference()->getAttributeName();
+                auto referrenceEntity = getEntity(attribute->getReference()->getEntityName());
+
+                referrenceEntity->eachIndexing([&](IndexingMetadata& indexingMetadata, bool _) {
+                    if (indexingMetadata.keys[0] == referrenceAttributeName && indexingMetadata.keys.size() == 1) {
+                        auto key = Helpers::TupleHandle::genBNodeKey(theTuple, indexingMetadata);
+                        auto searchPage = searchBtree(indexingMetadata, key);
+                        if (searchPage != endLeaf() && Helpers::TupleHandle::getBTreeKey(*searchPage) == key) {
+                            throw Errors("Referrence not found");
+                        }
+                    }
+                });
+            }
+        }
     }
 
     void Database::select(std::ostream &anOutput, SQLQueryPtr &aSelectQuery) {
@@ -195,6 +213,18 @@ namespace Csql {
         validateTableExisted(theEntityName);
 
         SharedEntityPtr theEntity = getEntity(theEntityName);
+
+        theEntity->eachIndexing([&](IndexingMetadata& indexingMetadata, bool isClustered) {
+            if (isClustered) {
+                auto iter = beginLeaf(indexingMetadata);
+                while (iter != endLeaf()) {
+                    for (auto e : (*iter)) {
+                        anOutput << e.first << ": " << Helpers::SqlTypeHandle::covertSqlTypeToString(e.second) << "\t|";
+                    }
+                    nextLeaf(iter);
+                }
+            }
+        });
 
         //=====================TARGET==================================================
         if (aSelectQuery->isSelectedAll) {
@@ -210,85 +240,16 @@ namespace Csql {
             }
         }
 
-        //======================JOIN=====================================================
-        std::vector<JoinedTuple> result;
-        eachTuple(theEntityName, [&](Tuple aTuple) {
-            JoinedTuple joinedTuple;
-            Helpers::JoinHandle::addToJoinedTuple(joinedTuple, theEntityName, aTuple);
-            result.push_back(joinedTuple);
-        });
-
-        JoinedTuple nullLeftTuple;
-        Helpers::JoinHandle::addToJoinedTuple(nullLeftTuple, theEntityName, theEntity->baseNullTuple());
-
-        for (auto &joinExpression : aSelectQuery->getListJoin()) {
-            std::vector<Tuple> rightTuple;
-
-            validateTableExisted(joinExpression.targetEntityName);
-            eachTuple(joinExpression.targetEntityName, [&](Tuple& aTuple) {
-                rightTuple.push_back(aTuple);
-            });
-
-            result = Helpers::JoinHandle::joinEntity(
-                joinExpression,
-                result,
-                rightTuple,
-                nullLeftTuple,
-                getEntity(joinExpression.targetEntityName)->baseNullTuple());
-        }
-
         //=================WHERE===========================================================
-        int index = 0;
-        for (int i = 0; i < result.size(); i++) {
-            if (aSelectQuery->getWhereExpression().apply(result[i])) {
-                result[index++] = result[i];
-            }
-        }
 
         //=================TABLE-VIEW=======================================================
         TableView theTableView(aSelectQuery->headers);
-        for (auto &joinedTuple : result) {
-            std::vector<std::string> temp;
-            for (auto target : aSelectQuery->getTargets()) {
-                temp.push_back(Helpers::SqlTypeHandle::covertSqlTypeToString(joinedTuple[target]));
-            }
-            theTableView.addData(temp);
-        }
+
         theTableView.show(anOutput);
     }
 
     void Database::deleteTuples(std::ostream &anOutput, const SQLQueryPtr &aDeleteQuery) {
-        std::string theEntityName = aDeleteQuery->getEntityName();
-        validateTableExisted(theEntityName);
-
-        SharedPagePtr theLastPage = nullptr;
-        uint32_t countEffectedRow = 0;
-        eachDataPage(theEntityName, [&](SharedPagePtr& aPage) {
-            for (int i = aPage->get_num_slots() - 1; i >= 0; --i) {
-                if (aDeleteQuery->getWhereExpression().
-                    apply(Helpers::JoinHandle::covertTupleToJoinedTuple(theEntityName, aPage->get_tuples().at(i)))
-                ) {
-                    countEffectedRow ++;
-                    aPage->deleteTuple(i);
-                }
-            }
-
-            if (aPage->get_num_slots() == 0) {
-                moveDataPageToFree(aPage, theLastPage);
-            }
-
-            if (theLastPage) {
-                writePage(theLastPage);
-            }
-            theLastPage = aPage;
-        });
-
-        if (theLastPage) {
-            writePage(theLastPage);
-        }
-        saveEntity(getEntity(theEntityName));
-
-        QueryResultView(countEffectedRow, "deleted").show(anOutput);
+        // TODO:
     }
 
     // make sure the table is existed

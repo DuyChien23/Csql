@@ -3,6 +3,8 @@
 //
 
 #include "binary_expression.h"
+
+#include "../../util/errors.h"
 #include "../../util/helpers.h"
 
 Csql::SqlTypes Csql::BinaryExpression::apply(const JoinedTuple &tuple) {
