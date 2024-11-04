@@ -12,8 +12,6 @@
 #include "storage.h"
 
 namespace Csql {
-    class Database;
-
     class Database : public Storage {
     public:
         Database(std::string databaseName) : Storage(databaseName) {};
@@ -30,9 +28,6 @@ namespace Csql {
         bool hasAtrributeName = false);
         void select(std::ostream& anOutput, SQLQueryPtr& aSelectQuery);
         void deleteTuples(std::ostream& anOutput, const SQLQueryPtr& aDeleteQuery);
-
-    protected:
-        std::string name;
 
     private:
         void validateCreateTable(const SharedEntityPtr& anEntityPtr);

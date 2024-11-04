@@ -129,6 +129,7 @@ namespace Csql {
     }
 
     BtreeLeafIterator Storage::searchBtree(const IndexingMetadata &indexingMetadata, BPlusKey& key) {
+        if (!indexingMetadata.root) return endLeaf();
         SharedPagePtr node = findLeaf(indexingMetadata, key);
         return BtreeLeafIterator(node->lower_bound(key, 0), node);
     }
@@ -159,7 +160,7 @@ namespace Csql {
             iter.index = 0;
             int nextIndex = dynamic_cast<LeafBPlusNode*>(iter.page.get())->nextLeaf;
             if (nextIndex == 0) {
-                return endLeaf();
+                return iter = endLeaf();
             }
             readPage(iter.page->get_the_entity()->getName(), nextIndex, iter.page);
         }

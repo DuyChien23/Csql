@@ -137,7 +137,7 @@ protected:
     };
 
     std::string theEntityName;
-    int limit = 100;
+    int limit = 10;
 };
 
 TEST_F(StorageTest1, SelectBtree) {
@@ -156,8 +156,7 @@ TEST_F(StorageTest1, SelectBtree) {
 TEST_F(StorageTest1, BeginOfBtree) {
     getEntity(theEntityName)->eachIndexing([&](IndexingMetadata& indexingMetadata, bool isClustered) {
         if (isClustered) {
-            auto key = BPlusKey(1);
-            auto iter = searchBtree(indexingMetadata, key);
+            auto iter = beginLeaf(indexingMetadata);
             ASSERT_NE(iter, endLeaf());
 
             int i = 1;

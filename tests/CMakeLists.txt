@@ -1,27 +1,16 @@
-cmake_minimum_required(VERSION 3.28)
+file(GLOB_RECURSE Sources_test CONFIGURE_DEPENDS "*.cpp")
 
-set(This CsqlTest)
+set(This_test Test)
 
-set(Sources io_test.cpp
-        entity_test.cpp
-        lru_cache_test.cpp
-        strorage_test.cpp
-        main.cpp
-        expression/arithmetic_expression_test.cpp
-        expression/expression_test.h
-        expression/attribute_expression_test.cpp
-        expression/binary_expression_test.cpp
-        expression/other_expression.cpp)
+add_executable(${This_test} ${Sources_test})
 
-add_executable(${This} ${Sources})
-
-target_link_libraries(${This} PUBLIC
+target_link_libraries(${This_test} PUBLIC
         gtest_main
         gmock_main
         source_libs
 )
 
 add_test(
-    NAME ${This}
-    COMMAND ${This}
+    NAME ${This_test}
+    COMMAND ${This_test}
 )
