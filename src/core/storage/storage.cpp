@@ -19,6 +19,7 @@
 
 namespace Csql {
     void Storage::writePage(SharedPagePtr& aPage) {
+        if (aPage == nullptr || !aPage->pageIndex) return;
         aPage->save();
         SharedPagePtr needWritingPage = aPage;
         if (Configs::cacheMaxSize) {
@@ -35,6 +36,11 @@ namespace Csql {
     }
 
     void Storage::readPage(const std::string &entityName, uint32_t pageIndex, SharedPagePtr& aPage) {
+        if (!pageIndex) {
+            aPage = nullptr;
+            return;
+        }
+
         std::string theKey = createKey(entityName, pageIndex);
         if (pageCache->contains(theKey)) {
             aPage = pageCache->get(theKey);
@@ -99,6 +105,16 @@ namespace Csql {
         }
     }
 
+    SharedPagePtr Storage::addPageIntoFreeZone(SharedPagePtr &aPage) {
+        SharedEntityPtr theEntity = aPage->get_the_entity();
+        SharedPagePtr thePage = std::make_shared<FreePage>(*aPage);
+        aPage = nullptr;
+        dynamic_cast<FreePage*>(thePage.get())->setNextFreePage(theEntity->getFirstFreePage());
+        theEntity->setFirstFreePage(thePage->pageIndex);
+        writePage(thePage);
+        return thePage;
+    }
+
     //===========================================B+Tree=Interface=========================================
     void Storage::setBTree(IndexingMetadata& indexingMetadata, Tuple tuple) {
         SharedPagePtr leaf;
@@ -110,10 +126,140 @@ namespace Csql {
         }
 
         leaf->addTuple(tuple);
-        if (leaf->getFreeSpace() < Configs::storageFreeSpaceSize) {
+        if (leaf->getSizeOfUsedBytes() > Configs::storageMaximumUsedBytes) {
             insertBtree(indexingMetadata, splitLeaf(leaf));
         } else {
             writePage(leaf);
+        }
+    }
+
+    void Storage::removeBtree(IndexingMetadata &indexingMetadata, const BPlusKey &key, SharedPagePtr node) {
+        if (!node) {
+            node = findLeaf(indexingMetadata, key);
+        }
+
+        // std::cerr << "Before: ";
+        // node->printLog();
+
+        if (node->pageType == PageType::leaf_b_plus_node) {
+            removeFromLeaf(key, node);
+        } else {
+            removeFromInternal(key, node);
+        }
+
+        // std::cerr << "After:  ";
+        // node->printLog();
+
+        SharedPagePtr parent;
+        readPage(indexingMetadata.entityName, node->parentIndex, parent);
+
+        if (node->getSizeOfUsedBytes() < Configs::storageMinimumUsedBytes) {
+            if (node->pageIndex == indexingMetadata.root) {
+                if (node->pageType == PageType::internal_b_plus_node && node->get_tuples().size() == 1) {
+                    indexingMetadata.root = Helpers::TupleHandle::getBtreeChild(*node->get_tuples().begin());
+                    addPageIntoFreeZone(node);
+
+                    SharedPagePtr root;
+                    readPage(indexingMetadata.entityName, indexingMetadata.root, root);
+                    root->parentIndex = 0;
+                    writePage(root);
+                } else {
+                    writePage(node);
+                }
+                return;
+            }
+
+             if (node->pageType == PageType::leaf_b_plus_node) {
+                SharedPagePtr prev;
+                SharedPagePtr next;
+
+                readPage(indexingMetadata.entityName, node->prevLeaf, prev);
+                readPage(indexingMetadata.entityName, node->nextLeaf, next);
+
+                auto updatePrevIndexOfNextNode = [&](SharedPagePtr& aNode) {
+                    SharedPagePtr temp;
+                    readPage(indexingMetadata.entityName, aNode->nextLeaf, temp);
+                    if (aNode->nextLeaf) {
+                        temp->prevLeaf = node->pageIndex;
+                        writePage(temp);
+                    }
+                };
+
+                if (next && node->parentIndex == next->parentIndex && next->getSizeOfUsedBytes() > Configs::storageMinimumUsedBytes) {
+                    LEAF_CAST(node)->borrowKeyFromRightLeaf(next, parent);
+                    writePage(next);
+                } else if (prev && node->parentIndex == prev->parentIndex && prev->getSizeOfUsedBytes() > Configs::storageMinimumUsedBytes) {
+                    LEAF_CAST(node)->borrowKeyFromLeftLeaf(prev, parent);
+                    writePage(prev);
+                } else if (next && node->parentIndex == next->parentIndex && next->getSizeOfUsedBytes() <= Configs::storageMinimumUsedBytes) {
+                    LEAF_CAST(node)->mergeLeafNode(next, parent);
+                    updatePrevIndexOfNextNode(node);
+                    addPageIntoFreeZone(next);
+                } else if (prev && node->parentIndex == prev->parentIndex && prev->getSizeOfUsedBytes() <= Configs::storageMinimumUsedBytes) {
+                    LEAF_CAST(prev)->mergeLeafNode(node, parent);
+                    updatePrevIndexOfNextNode(prev);
+                    addPageIntoFreeZone(node);
+                    node = prev;
+                }
+            } else {
+                int index = parent->lower_bound(node->get_btree_key(), 1);
+                if (index == -1) {
+                    index = 0;
+                }
+
+                SharedPagePtr prev = nullptr;
+                SharedPagePtr next = nullptr;
+
+                if (index + 1 < parent->get_tuples().size()) {
+                    readPage(indexingMetadata.entityName, parent->get_child_index(index + 1), next);
+                }
+
+                if (index > 0) {
+                    readPage(indexingMetadata.entityName, parent->get_child_index(index - 1), prev);
+                }
+
+                auto updateParentIndexOfChild = [&](SharedPagePtr& aNode, int num, bool runningFromBegin) {
+                    auto run = [&](const Tuple& tuple) {
+                        SharedPagePtr temp;
+                        readPage(indexingMetadata.entityName, Helpers::TupleHandle::getBtreeChild(tuple), temp);
+                        temp->parentIndex = aNode->pageIndex;
+                        writePage(temp);
+                    };
+
+
+                    for (int i = 0; i < num; ++i) {
+                        int index = runningFromBegin ? i : aNode->get_num_slots() - i - 1;
+                        run(aNode->getTuple(index));
+                    }
+                };
+
+                if (next && next->getSizeOfUsedBytes() > Configs::storageMinimumUsedBytes) {
+                    INTERNAL_CAST(node)->borrowKeyFromRightInternal(next, parent, index);
+                    updateParentIndexOfChild(node, 1, false);
+                    writePage(next);
+                } else if (prev && prev->getSizeOfUsedBytes() > Configs::storageMinimumUsedBytes) {
+                    INTERNAL_CAST(node)->borrowKeyFromLeftInternal(prev, parent, index);
+                    updateParentIndexOfChild(node, 1, true);
+                    writePage(prev);
+                } else if (next && next->getSizeOfUsedBytes() <= Configs::storageMinimumUsedBytes) {
+                    int num = next->get_tuples().size();
+                    INTERNAL_CAST(node)->mergeInternalNode(next, parent, index);
+                    updateParentIndexOfChild(node, num, false);
+                    addPageIntoFreeZone(next);
+                } else if (prev && prev->getSizeOfUsedBytes() <= Configs::storageMinimumUsedBytes) {
+                    int num = node->get_tuples().size();
+                    INTERNAL_CAST(prev)->mergeInternalNode(node, parent, index - 1);
+                    updateParentIndexOfChild(prev, num, false);
+                    addPageIntoFreeZone(node);
+                    node = prev;
+                }
+            }
+        }
+
+        writePage(node);
+
+        if (parent) {
+            removeBtree(indexingMetadata, key, parent);
         }
     }
 
@@ -131,16 +277,23 @@ namespace Csql {
     BtreeLeafIterator Storage::searchBtree(const IndexingMetadata &indexingMetadata, BPlusKey& key) {
         if (!indexingMetadata.root) return endLeaf();
         SharedPagePtr node = findLeaf(indexingMetadata, key);
+        auto index = node->lower_bound(key, 0);
+        if (index == -1 || GET_BTREE_KEY(node->getTuple(index)) != key) {
+            return endLeaf();
+        }
         return BtreeLeafIterator(node->lower_bound(key, 0), node);
     }
 
     BtreeLeafIterator Storage::beginLeaf(const IndexingMetadata &indexingMetadata) {
-        if (!indexingMetadata.root) return endLeaf();
+        return beginLeaf(indexingMetadata.entityName, indexingMetadata.root);
+    }
 
-        uint32_t nodeIndex = indexingMetadata.root;
-        while(true) {
+    BtreeLeafIterator Storage::beginLeaf(const std::string& entityName, uint32_t nodeIndex) {
+        if (!nodeIndex) return endLeaf();
+
+        while (true) {
             SharedPagePtr node;
-            readPage(indexingMetadata.entityName, nodeIndex, node);
+            readPage(entityName, nodeIndex, node);
 
             if (node->pageType == PageType::leaf_b_plus_node) {
                 return BtreeLeafIterator(0, node);
@@ -168,34 +321,34 @@ namespace Csql {
     }
 
     void Storage::printBtree(IndexingMetadata &indexingMetadata, int nodeIndex, std::string _prefix, bool _last)  {
-        if (nodeIndex == 0) nodeIndex = indexingMetadata.root;
+        if (nodeIndex == 0) {
+            std::cerr << "====================B+Tree====================" << std::endl;
+            nodeIndex = indexingMetadata.root;
+        }
         std::cerr << _prefix << "├ [";
 
         SharedPagePtr node;
         readPage(indexingMetadata.entityName, nodeIndex, node);
 
-        for (int i = (node->pageType == PageType::leaf_b_plus_node ? 0 : 1); i < node->get_num_slots(); ++i) {
-            Helpers::TupleHandle::getBTreeKey(node->get_tuples().at(i)).log();
+        for (int i = (node->pageType == PageType::internal_b_plus_node); i < node->get_num_slots(); ++i) {
+            Helpers::TupleHandle::getBTreeKey(node->getTuple(i)).log();
             if (i != node->get_num_slots() - 1) {
                 std::cerr << ", ";
             }
         }
 
-        std::cerr << "]";
-
-        if (node->pageType == PageType::leaf_b_plus_node) {
-            std::cerr << node->prevLeaf << "-+-" << node->pageIndex << "-+-" << node->nextLeaf;
-        }
-        std::cerr << std::endl;
+        std::cerr << "~[PageIndex=" << node->pageIndex << "][ParentIndex=" << node->parentIndex << "]" << std::endl;
 
         _prefix += _last ? "   " : "╎  ";
 
         if (node->pageType == PageType::internal_b_plus_node) {
             for (int i = 0; i < node->get_num_slots(); ++i) {
                 bool _last = (i == node->get_num_slots() - 1);
-                printBtree(indexingMetadata, Helpers::TupleHandle::getBtreeChild(node->get_tuples().at(i)), _prefix, _last);
+                printBtree(indexingMetadata, Helpers::TupleHandle::getBtreeChild(node->getTuple(i)), _prefix, _last);
             }
         }
+
+        std::cerr.flush();
     }
 
     //===========================================B+Tree=Internal=========================================
@@ -218,7 +371,7 @@ namespace Csql {
         readPage(left->get_the_entity()->getName(), left->parentIndex, parent);
         INTERNAL_CAST(parent)->setChild(key, left->pageIndex, right->pageIndex);
 
-        if (parent->getFreeSpace() < Configs::storageFreeSpaceSize) {
+        if (parent->getSizeOfUsedBytes() > Configs::storageMinimumUsedBytes) {
             insertBtree(indexingMetadata, splitInternal(parent));
         } else {
             writePage(parent);
@@ -260,5 +413,31 @@ namespace Csql {
         writePage(left);
         writePage(node);
         return std::make_tuple(key, left, node);
+    }
+
+    void Storage::removeFromLeaf(const BPlusKey &key, SharedPagePtr node) {
+        int index = node->lower_bound(key, 0);
+        if (index == -1) {
+            throw Errors("Key not found");
+        }
+        node->deleteTuple(index);
+        if (node->parentIndex) {
+            SharedPagePtr parent;
+            readPage(node->get_the_entity()->getName(), node->parentIndex, parent);
+            int indexInParent = INTERNAL_CAST(parent)->indexOfChild(key);
+            if (indexInParent) {
+                parent->getTuple(indexInParent).at(SpecialKey::BTREE_KEY) = node->get_btree_key();
+                writePage(parent);
+            }
+        }
+    }
+
+    void Storage::removeFromInternal(const BPlusKey &key, SharedPagePtr node) {
+        int index = node->lower_bound(key, 1);
+        if (index != -1) {
+            uint32_t childIndex = Helpers::TupleHandle::getBtreeChild(node->getTuple(index));
+            auto leftMostLeaf = beginLeaf(node->get_the_entity()->getName(), childIndex).page;
+            node->getTuple(index).at(SpecialKey::BTREE_KEY) = leftMostLeaf->get_btree_key();
+        }
     }
 }

@@ -41,7 +41,7 @@ namespace Csql {
         }
 
         Tuple& operator*() {
-            return page->get_tuples().at(index);
+            return page->getTuple(index);
         }
     };
 
@@ -140,14 +140,16 @@ namespace Csql {
         void deleteEntityFile(const std::string& entityName);
         void eachEntity(const EntityVisitor& entityVisitor);
 
-        // get 1 free page
         SharedPagePtr popFreePage(const std::string& entityName);
+        SharedPagePtr addPageIntoFreeZone(SharedPagePtr &aPage);
 
         //===========================================B+Tree=Interface=========================================
         void setBTree(IndexingMetadata& indexingMetadata, Tuple tuple);
+        void removeBtree(IndexingMetadata& indexingMetadata, const BPlusKey& key, SharedPagePtr node = nullptr);
         SharedPagePtr findLeaf(const IndexingMetadata& indexingMetadata, const BPlusKey& key);
         BtreeLeafIterator searchBtree(const IndexingMetadata& indexingMetadata, BPlusKey& key);
         BtreeLeafIterator beginLeaf(const IndexingMetadata &indexingMetadata);
+        BtreeLeafIterator beginLeaf(const std::string& entityName, uint32_t nodeIndex);
         BtreeLeafIterator& endLeaf();
         BtreeLeafIterator& nextLeaf(BtreeLeafIterator& iter);
 
@@ -158,6 +160,8 @@ namespace Csql {
         void insertBtree(IndexingMetadata& indexingMetadata, SplitNodeType result);
         SplitNodeType splitLeaf(SharedPagePtr node);
         SplitNodeType splitInternal(SharedPagePtr node);
+        void removeFromLeaf(const BPlusKey& key, SharedPagePtr node);
+        void removeFromInternal(const BPlusKey& key, SharedPagePtr node);
 
         BtreeLeafIterator endLeafBnode = BtreeLeafIterator(-1, nullptr);
     };
