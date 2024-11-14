@@ -17,6 +17,10 @@ namespace Csql {
 
         void addTuple(const Tuple &aTuple) override;
         void splitNode(SharedPagePtr left);
+
+        void borrowKeyFromRightLeaf(SharedPagePtr next, SharedPagePtr parent);
+        void borrowKeyFromLeftLeaf(SharedPagePtr prev, SharedPagePtr parent);
+        void mergeLeafNode(SharedPagePtr next, SharedPagePtr parent);
     };
 }
 

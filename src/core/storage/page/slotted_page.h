@@ -37,13 +37,14 @@ namespace Csql {
         //Saves variables to the raw data array
         virtual void save();
 
-        [[nodiscard]] uint32_t getFreeSpace() const;
+        [[nodiscard]] uint32_t getSizeOfUsedBytes() const;
         Tuple readTuple(uint32_t iSlot);
         void writeTuple(uint32_t iSlot);
         virtual void addTuple(const Tuple& aTuple) {};
         virtual void splitNode(SharedPagePtr left) {};
         void deleteTuple(u_int32_t iSlot);
         int lower_bound(const BPlusKey &key, int begin);
+        void printLog();
 
         void reassignData();
 
@@ -79,6 +80,10 @@ namespace Csql {
             return tuples;
         }
 
+        [[nodiscard]] PageType get_page_type() const {
+            return pageType;
+        }
+
         [[nodiscard]] SharedEntityPtr& get_the_entity() {
             return theEntity;
         }
@@ -87,7 +92,9 @@ namespace Csql {
             theEntity = the_entity;
         }
 
-         BPlusKey get_btree_key();
+        BPlusKey get_btree_key();
+        uint32_t get_child_index(uint32_t i);
+        [[nodiscard]] Tuple& getTuple(uint32_t i);
 
         //type of page
         PageType pageType = PageType::free_page;

@@ -8,7 +8,8 @@
 namespace Configs {
     const std::string databaseMetadataFileName = "metadata.bin";
     const uint32_t storageUnitSize = 4096;
-    const uint32_t storageFreeSpaceSize = storageUnitSize / 16;
+    const uint32_t storageMaximumUsedBytes = storageUnitSize * 15 / 16;
+    const uint32_t storageMinimumUsedBytes = storageUnitSize * 15 / 32;
     const uint32_t maxSlots = 3;
     const size_t cacheMaxSize = 100000;
     const std::string databaseDictionaryName = "Databases";

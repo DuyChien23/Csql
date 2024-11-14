@@ -22,6 +22,10 @@ namespace Csql {
         void setChild(const BPlusKey &key, uint32_t left, uint32_t right);
         uint32_t indexOfChild(const BPlusKey &key);
         uint32_t getChild(const BPlusKey& key);
+
+        void borrowKeyFromRightInternal(SharedPagePtr next, SharedPagePtr parent, int index);
+        void borrowKeyFromLeftInternal(SharedPagePtr prev, SharedPagePtr parent, int index);
+        void mergeInternalNode(SharedPagePtr next, SharedPagePtr parent, int index);
     };
 }
 
