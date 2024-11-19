@@ -10,21 +10,21 @@
 
 #endif //USE_DATABASE_H
 
-namespace Csql {
-    class UseDatabaseStatement : public Statement {
-    public:
-        UseDatabaseStatement(const std::string& databaseName, std::ostream& output) : Statement(output) {
-            this->databaseName = databaseName;
+class UseDatabaseStatement : public Statement {
+public:
+    UseDatabaseStatement(const std::string &databaseName, std::ostream &output) : Statement(output) {
+        this->databaseName = databaseName;
+    }
+
+    void execute() override {
+        try {
+            DatabaseController::setDatabase(databaseName);
+            output << "Use database " << databaseName << std::endl;
+        } catch (Errors &e) {
+            output << e.what() << std::endl;
         }
-        void execute() override {
-            try {
-                DatabaseController::setDatabase(databaseName);
-                output << "Use database " << databaseName << std::endl;
-            } catch (Errors& e) {
-                output << e.what() << std::endl;
-            }
-        }
-    private:
-        std::string databaseName;
-    };
-}
+    }
+
+private:
+    std::string databaseName;
+};

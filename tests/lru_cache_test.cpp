@@ -6,7 +6,6 @@
 
 #include "../src/core/storage/lru_cache/lru_cache.h"
 
-using namespace Csql;
 
 LRUCache<int, int*>* initStandardLRUCache(size_t maxSize) {
     LRUCache<int, int*>* lru_cache = new LRUCache<int, int*>(maxSize);

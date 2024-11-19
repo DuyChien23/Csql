@@ -9,7 +9,6 @@
 #include "../../util/errors.h"
 #include "../page/slotted_page.h"
 
-namespace Csql {
     void IOManager::encode(std::fstream &anOutput) {
         anOutput.write(rawData, Configs::storageUnitSize);
         anOutput.flush();
@@ -159,4 +158,4 @@ namespace Csql {
         this->bufferOffset = 0;
     }
 
-}
+

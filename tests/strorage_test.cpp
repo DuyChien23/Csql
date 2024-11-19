@@ -11,8 +11,6 @@
 #include "../src/core/storage/page/b_plus_node/leaf_b_plus_node.h"
 #include "../src/core/util/helpers.h"
 
-using namespace Csql;
-
 class StorageTest0 : public Storage, public ::testing::Test {
 protected:
     StorageTest0() : Storage("a2k22") {

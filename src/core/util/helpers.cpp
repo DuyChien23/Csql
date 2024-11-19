@@ -5,7 +5,6 @@
 #include "helpers.h"
 
 #include "errors.h"
-using namespace Csql;
 using namespace Helpers;
 
 //==========================================SQL-TYPE-HANDLE===================================================
@@ -40,7 +39,7 @@ DataTypes SqlTypeHandle::covertStringToDataType(std::string type) {
 
 SqlTypes SqlTypeHandle::covertStringToSqlType(DataTypes type, std::string value) {
     if (type == DataTypes::bool_type) {
-        for (auto &c : value)
+        for (auto &c: value)
             c = std::tolower(c);
 
         if (value == "true") return SqlBoolType(true);
@@ -97,7 +96,7 @@ uint32_t SqlTypeHandle::sizeOfSqlType(const SqlTypes &value) {
 
 uint32_t SqlTypeHandle::sizeOfTuple(const Tuple &aTuple) {
     uint32_t result = 0;
-    for (auto& element : aTuple) {
+    for (auto &element: aTuple) {
         result += sizeof(uint32_t);
         result += element.first.size();
         result += sizeOfSqlType(element.second);
@@ -202,7 +201,7 @@ bool ExpressionHandle::likeMatch(const SqlTypes &lhs, const SqlTypes &rhs) {
 
 //==========================================JOIN-HANDLE===================================================
 void JoinHandle::addToJoinedTuple(JoinedTuple &theJoinTuple, const std::string &entityName, const Tuple &aTuple) {
-    for (auto& element : aTuple) {
+    for (auto &element: aTuple) {
         auto key = std::make_pair(entityName, element.first);
         theJoinTuple.insert(std::make_pair(key, element.second));
     }
@@ -215,7 +214,7 @@ JoinedTuple JoinHandle::covertTupleToJoinedTuple(const std::string &entityName, 
 }
 
 void JoinHandle::removeFromJoinedTuple(JoinedTuple &theJoinTuple, const std::string &entityName, const Tuple &aTuple) {
-    for (auto& element : aTuple) {
+    for (auto &element: aTuple) {
         auto key = std::make_pair(entityName, element.first);
         if (theJoinTuple.contains(key)) {
             theJoinTuple.erase(key);
@@ -223,7 +222,9 @@ void JoinHandle::removeFromJoinedTuple(JoinedTuple &theJoinTuple, const std::str
     }
 }
 
-std::vector<JoinedTuple> JoinHandle::joinEntity(const JoinExpression &joinExpression, std::vector<JoinedTuple> &left, const std::vector<Tuple> &right, JoinedTuple &nullLeftTuple, const Tuple &nullRightTuple) {
+std::vector<JoinedTuple> JoinHandle::joinEntity(const JoinExpression &joinExpression, std::vector<JoinedTuple> &left,
+                                                const std::vector<Tuple> &right, JoinedTuple &nullLeftTuple,
+                                                const Tuple &nullRightTuple) {
     std::vector<JoinedTuple> result;
 
     std::map<int, bool> noteLeft, noteRight;
@@ -280,7 +281,7 @@ Tuple TupleHandle::baseInternalBNode(const BPlusKey &key, const uint32_t &childI
 
 BPlusKey TupleHandle::genBNodeKey(const Tuple &aTuple, const IndexingMetadata &indexingMetadata) {
     BPlusKey key;
-    for (auto& element : indexingMetadata.keys) {
+    for (auto &element: indexingMetadata.keys) {
         key.push_back(SqlTypeHandle::convertToPairKeyElement(element));
     }
     return key;
@@ -290,7 +291,8 @@ void TupleHandle::addBNodeKey(Tuple &aTuple, const IndexingMetadata &indexingMet
     aTuple.insert(std::make_pair(SpecialKey::BTREE_KEY, genBNodeKey(aTuple, indexingMetadata)));
 }
 
-Tuple TupleHandle::makeSecondaryTuple(const Tuple &aTuple, const IndexingMetadata &indexingMetadata, const std::string &primaryKey) {
+Tuple TupleHandle::makeSecondaryTuple(const Tuple &aTuple, const IndexingMetadata &indexingMetadata,
+                                      const std::string &primaryKey) {
     Tuple result;
     result.insert(std::make_pair(SpecialKey::BTREE_KEY, genBNodeKey(aTuple, indexingMetadata)));
     result.insert(std::make_pair(primaryKey, aTuple.at(primaryKey)));
@@ -318,13 +320,7 @@ bool FolderHandle::createIfNotExist(const std::string &theFolder, const std::str
 }
 
 void FolderHandle::eachFolder(const std::string &theFolder, std::function<void(const std::string &)> aCallback) {
-    for (const auto& entry : std::filesystem::directory_iterator(theFolder)) {
+    for (const auto &entry: std::filesystem::directory_iterator(theFolder)) {
         aCallback(entry.path().filename().string());
     }
 }
-
-
-
-
-
-

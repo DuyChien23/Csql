@@ -10,20 +10,20 @@
 #include "../../../storage/database.h"
 #include "../../../storage/sql_query.h"
 
-namespace Csql {
-    class DeleteTuplesStatement : public Statement {
-    public:
-        DeleteTuplesStatement(SQLQueryPtr& aDeleteQuery, std::ostream& output) : Statement(output) {
-            deleteQuery = std::move(aDeleteQuery);
-        }
+class DeleteTuplesStatement : public Statement {
+public:
+    DeleteTuplesStatement(SQLQueryPtr &aDeleteQuery, std::ostream &output) : Statement(output) {
+        deleteQuery = std::move(aDeleteQuery);
+    }
 
-        void execute() override {
-            DatabasePtr database = DatabaseController::getDatabase();
-            database->deleteTuples(output, deleteQuery);
-        }
-    private:
-        SQLQueryPtr deleteQuery;
-    };
-}
+    void execute() override {
+        DatabasePtr database = DatabaseController::getDatabase();
+        database->deleteTuples(output, deleteQuery);
+    }
+
+private:
+    SQLQueryPtr deleteQuery;
+};
+
 
 #endif //DELETE_TUPLES_STATEMENT_H

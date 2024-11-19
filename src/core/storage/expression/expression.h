@@ -6,12 +6,12 @@
 #define EXPRESSION_H
 #include "../../util/types.h"
 
-namespace Csql {
-    class Expression {
-    public:
-        virtual SqlTypes apply(const JoinedTuple& tuple) = 0;
-        virtual ~Expression() = default;
-    };
-}
+class Expression {
+public:
+    virtual SqlTypes apply(const JoinedTuple &tuple) = 0;
+
+    virtual ~Expression() = default;
+};
+
 
 #endif //EXPRESSION_H

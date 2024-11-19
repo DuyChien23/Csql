@@ -7,18 +7,20 @@
 #include "socket.h"
 #include <unistd.h>
 
-namespace Csql {
-    class TCPClient : public Socket {
-    public:
-        explicit TCPClient(int socketNum) : Socket(socketNum) {};
-        int read(char *buffer, int size) {
-            memset(buffer, 0, size);
-            return ::read(socketNum, buffer, size);
-        }
-        int send(const char *buffer) {
-            return ::send(socketNum, buffer, strlen(buffer), 0);
-        }
+class TCPClient : public Socket {
+public:
+    explicit TCPClient(int socketNum) : Socket(socketNum) {
     };
-}
+
+    int read(char *buffer, int size) {
+        memset(buffer, 0, size);
+        return ::read(socketNum, buffer, size);
+    }
+
+    int send(const char *buffer) {
+        return ::send(socketNum, buffer, strlen(buffer), 0);
+    }
+};
+
 
 #endif //TCP_SOCKET_H

@@ -8,29 +8,30 @@
 
 #include "expression.h"
 
-namespace Csql {
-    enum class JoinTypes {
-        inner,
-        left,
-        right,
-        cross,
-    };
+enum class JoinTypes {
+    inner,
+    left,
+    right,
+    cross,
+};
 
-    class JoinExpression {
-    public:
-        JoinExpression(JoinTypes type, std::string _targetEntityName);
-        JoinExpression(Expression *anExpression);
+class JoinExpression {
+public:
+    JoinExpression(JoinTypes type, std::string _targetEntityName);
 
-        [[nodiscard]] bool apply(const JoinedTuple& tuple) const;
-        void addOrExpression(Expression* anExpression);
-        void addAndExpression(Expression* anExpression);
+    JoinExpression(Expression *anExpression);
 
-        JoinTypes joinType;
-        std::string targetEntityName;
-    protected:
-        Expression* expression;
-    };
-}
+    [[nodiscard]] bool apply(const JoinedTuple &tuple) const;
 
+    void addOrExpression(Expression *anExpression);
+
+    void addAndExpression(Expression *anExpression);
+
+    JoinTypes joinType;
+    std::string targetEntityName;
+
+protected:
+    Expression *expression;
+};
 
 #endif //JOIN_EXPRESSION_H

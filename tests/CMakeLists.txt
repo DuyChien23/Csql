@@ -11,6 +11,6 @@ target_link_libraries(${This_test} PUBLIC
 )
 
 add_test(
-    NAME ${This_test}
-    COMMAND ${This_test}
+        NAME ${This_test}
+        COMMAND ${This_test}
 )

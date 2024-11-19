@@ -9,7 +9,6 @@
 
 #include "../util/types.h"
 
-namespace Csql {
     namespace SpecialKey {
         const std::string BTREE_KEY = "bree_key_2303";
         const std::string HIDDEN_KEY = "hidden_key_2303";
@@ -68,6 +67,6 @@ namespace Csql {
     };
 
     using AttributeList = std::vector<Attribute*>;
-}
+
 
 #endif //ATTRIBUTE_H

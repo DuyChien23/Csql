@@ -10,20 +10,20 @@
 #include "../../../storage/database.h"
 #include "../../../storage/sql_query.h"
 
-namespace Csql {
-    class SelectStatement : public Statement {
-    public:
-        SelectStatement(SQLQueryPtr& aSelectQuery, std::ostream& output) : Statement(output) {
-            selectQuery = std::move(aSelectQuery);
-        }
+class SelectStatement : public Statement {
+public:
+    SelectStatement(SQLQueryPtr &aSelectQuery, std::ostream &output) : Statement(output) {
+        selectQuery = std::move(aSelectQuery);
+    }
 
-        void execute() override {
-            DatabasePtr database = DatabaseController::getDatabase();
-            database->select(output, selectQuery);
-        }
-    protected:
-        SQLQueryPtr selectQuery;
-    };
-}
+    void execute() override {
+        DatabasePtr database = DatabaseController::getDatabase();
+        database->select(output, selectQuery);
+    }
+
+protected:
+    SQLQueryPtr selectQuery;
+};
+
 
 #endif //SELECT_STATEMENT_H

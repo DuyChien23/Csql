@@ -11,44 +11,41 @@
 #include "../statements/database_statements/show_databases.h"
 #include "../statements/database_statements/use_database.h"
 
-namespace Csql {
-    Statement* DatabaseParser::makeStatement(Tokenizer &aTokenizer) {
-        for (auto &factory : factories) {
-            try {
-                Statement *statement = (this->*factory)(aTokenizer.reset());
-                if (statement != nullptr) {
-                    return statement;
-                }
-            } catch (...) {
-                // do nothing because we want to try the next factory
+Statement *DatabaseParser::makeStatement(Tokenizer &aTokenizer) {
+    for (auto &factory: factories) {
+        try {
+            Statement *statement = (this->*factory)(aTokenizer.reset());
+            if (statement != nullptr) {
+                return statement;
             }
+        } catch (...) {
+            // do nothing because we want to try the next factory
         }
-        return nullptr;
     }
+    return nullptr;
+}
 
-    Statement* DatabaseParser::useDatabaseStatement(Tokenizer *aTokenizer) {
-        std::string databaseName;
-        aTokenizer->check(SqlKeywords::use_kw)->consumeType(databaseName)->endBy(";");
-        return new UseDatabaseStatement(databaseName, output);
-    }
+Statement *DatabaseParser::useDatabaseStatement(Tokenizer *aTokenizer) {
+    std::string databaseName;
+    aTokenizer->check(SqlKeywords::use_kw)->consumeType(databaseName)->endBy(";");
+    return new UseDatabaseStatement(databaseName, output);
+}
 
-    Statement *DatabaseParser::createDatabaseStatement(Tokenizer *aTokenizer) {
-        std::string databaseName;
-        aTokenizer->check(SqlKeywords::create_kw)->check(SqlKeywords::database_kw)->consumeType(databaseName)->endBy(";");
+Statement *DatabaseParser::createDatabaseStatement(Tokenizer *aTokenizer) {
+    std::string databaseName;
+    aTokenizer->check(SqlKeywords::create_kw)->check(SqlKeywords::database_kw)->consumeType(databaseName)->endBy(";");
 
-        return new CreateDatabaseStatement(databaseName, output);
-    }
+    return new CreateDatabaseStatement(databaseName, output);
+}
 
-    Statement *DatabaseParser::showTableStatement(Tokenizer *aTokenizer) {
-        aTokenizer->check(SqlKeywords::show_kw)->check(SqlKeywords::tables_kw)->endBy(";");
+Statement *DatabaseParser::showTableStatement(Tokenizer *aTokenizer) {
+    aTokenizer->check(SqlKeywords::show_kw)->check(SqlKeywords::tables_kw)->endBy(";");
 
-        return new ShowTablesStatement(output);
-    }
+    return new ShowTablesStatement(output);
+}
 
-    Statement *DatabaseParser::showDatabasesStatement(Tokenizer *aTokenizer) {
-        aTokenizer->check(SqlKeywords::show_kw)->check(SqlKeywords::databases_kw)->endBy(";");
+Statement *DatabaseParser::showDatabasesStatement(Tokenizer *aTokenizer) {
+    aTokenizer->check(SqlKeywords::show_kw)->check(SqlKeywords::databases_kw)->endBy(";");
 
-        return new ShowDatabasesStatement(output);
-    }
-
+    return new ShowDatabasesStatement(output);
 }

@@ -7,8 +7,6 @@
 
 std::string dbName = "a2k23";
 
-using namespace  Csql;
-
 Database *intiDatabase() {
     std::string dirPath = "Databases/" + dbName;
     std::filesystem::create_directory("Databases");
@@ -28,7 +26,8 @@ TEST(MAIN, MAIN_TEST_CREATE_TABLE) {
     Database *database = intiDatabase();
 
     SharedEntityPtr entity1 = std::make_shared<Entity>(dbName, "students");
-    entity1->addAttribute((new Attribute)->setName("id")->setType(DataTypes::int_type)->setPrimary(true)->setAutoIncrement(true));
+    entity1->addAttribute(
+        (new Attribute)->setName("id")->setType(DataTypes::int_type)->setPrimary(true)->setAutoIncrement(true));
     entity1->addAttribute((new Attribute)->setName("first_name")->setType(DataTypes::varchar_type));
     entity1->addAttribute((new Attribute)->setName("last_name")->setType(DataTypes::varchar_type));
     entity1->addAttribute((new Attribute)->setName("birthday")->setType(DataTypes::datetime_type));
@@ -37,9 +36,11 @@ TEST(MAIN, MAIN_TEST_CREATE_TABLE) {
 
 
     SharedEntityPtr entity2 = std::make_shared<Entity>(dbName, "courses");
-    entity2->addAttribute((new Attribute)->setName("id")->setType(DataTypes::int_type)->setPrimary(true)->setAutoIncrement(true));
+    entity2->addAttribute(
+        (new Attribute)->setName("id")->setType(DataTypes::int_type)->setPrimary(true)->setAutoIncrement(true));
     entity2->addAttribute((new Attribute)->setName("name")->setType(DataTypes::varchar_type));
-    entity2->addAttribute((new Attribute)->setName("code")->setType(DataTypes::varchar_type)->setUnique(true)->setNullable(false));
+    entity2->addAttribute(
+        (new Attribute)->setName("code")->setType(DataTypes::varchar_type)->setUnique(true)->setNullable(false));
     database->createTable(std::cerr, entity2);
 
     SharedEntityPtr entity3 = std::make_shared<Entity>(dbName, "student_course");
@@ -62,7 +63,7 @@ TEST(MAIN, MAIN_TEST_DESCRIBE_TABLE) {
 
 TEST(MAIN, MAIN_TEST_INSERT) {
     Database *database = intiDatabase();
-    std::vector<std::pair<std::string, std::string>> tuple1 = {
+    std::vector<std::pair<std::string, std::string> > tuple1 = {
         std::make_pair("id", "1"),
         std::make_pair("first_name", "Dao"),
         std::make_pair("last_name", "Chien"),
@@ -70,20 +71,20 @@ TEST(MAIN, MAIN_TEST_INSERT) {
         std::make_pair("email", "neihcr7j23"),
     };
 
-    std::vector<std::pair<std::string, std::string>> tuple2 = {
+    std::vector<std::pair<std::string, std::string> > tuple2 = {
         std::make_pair("id", "1"),
         std::make_pair("name", "DSA"),
         std::make_pair("code", "INT123"),
     };
 
-    std::vector<std::pair<std::string, std::string>> tuple3 = {
+    std::vector<std::pair<std::string, std::string> > tuple3 = {
         std::make_pair("student_id", "2"),
         std::make_pair("course_id", "2"),
     };
 
-   database->insert(std::cerr, "students", tuple1);
-   // database->insert(std::cerr, "courses", tuple2);
-  //database->insert(std::cerr, "student_course", tuple3);
+    database->insert(std::cerr, "students", tuple1);
+    // database->insert(std::cerr, "courses", tuple2);
+    //database->insert(std::cerr, "student_course", tuple3);
 }
 
 TEST(MAIN, MAIN_TEST_SELECT) {
@@ -104,8 +105,8 @@ TEST(MAIN, MAIN_TEST_DELETE) {
     SQLQueryPtr aSQLQuery = std::make_unique<SQLQuery>();
     WhereExpression where_expression;
     where_expression.addAndExpression(new BinaryExpression(BinaryOperator::equal,
-            new AttributeExpression("students", "id"),
-            new ValueExpression(SqlIntType(2))));
+                                                           new AttributeExpression("students", "id"),
+                                                           new ValueExpression(SqlIntType(2))));
     aSQLQuery->setWhereExpression(where_expression);
 
     // JoinedTuple joined_tuple;

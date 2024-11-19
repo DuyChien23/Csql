@@ -6,9 +6,6 @@
 #include "../src/core/storage/io_manager/io_manager.h"
 #include "../src/core/util/errors.h"
 
-using namespace Csql;
-
-namespace Csql {
     class IoManagerTest : IOManager {
     public:
         IoManagerTest() = default;
@@ -72,7 +69,7 @@ namespace Csql {
             EXPECT_EQ(input, output);
         }
     } io_manager_test;
-}
+
 
 TEST(IO_TEST, ENCODE_DECODE_TEST) {
     io_manager_test.encode_decode_test("2ieoijmd1-dj10odkowd,op1wk,x-1wkx");

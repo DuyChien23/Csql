@@ -6,7 +6,7 @@
 #include "../../util/errors.h"
 #include "../../util/helpers.h"
 
-Csql::OtherExpression::OtherExpression(OtherOperator _op, Expression* _value, std::vector<SqlTypes> _list) {
+OtherExpression::OtherExpression(OtherOperator _op, Expression *_value, std::vector<SqlTypes> _list) {
     op = _op;
     value = _value;
     list = std::move(_list);
@@ -22,17 +22,19 @@ Csql::OtherExpression::OtherExpression(OtherOperator _op, Expression* _value, st
     }
 };
 
-Csql::SqlTypes Csql::OtherExpression::apply(const JoinedTuple &tuple) {
+SqlTypes OtherExpression::apply(const JoinedTuple &tuple) {
     SqlTypes v = value->apply(tuple);
     if (!list.empty() && v.index() != list.begin()->index()) throw Errors("Type of operand invalid");
 
     if (op == OtherOperator::between || op == OtherOperator::not_between) {
         return static_cast<SqlBoolType>((op == OtherOperator::not_between) ^
-            (Helpers::ExpressionHandle::ExpressionHandle::compareSqlType(list[0], v) != SqlTypeCompareResult::greater
-                && Helpers::ExpressionHandle::compareSqlType(v, list[1]) != SqlTypeCompareResult::greater));
+                                        (Helpers::ExpressionHandle::ExpressionHandle::compareSqlType(list[0], v) !=
+                                         SqlTypeCompareResult::greater
+                                         && Helpers::ExpressionHandle::compareSqlType(v, list[1]) !=
+                                         SqlTypeCompareResult::greater));
     } else {
         bool is_in = false;
-        for (auto& element : list) {
+        for (auto &element: list) {
             if (Helpers::ExpressionHandle::compareSqlType(v, element) == SqlTypeCompareResult::equal) {
                 is_in = true;
             }

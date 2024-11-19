@@ -4,105 +4,101 @@
 
 #include "attribute.h"
 
-namespace Csql {
-    Reference *Reference::setLimit(uint32_t limit) {
-        this->limit = limit;
-        return this;
-    }
-
-    Reference *Reference::setEntityName(std::string entityName) {
-        this->entityName = entityName;
-        return this;
-    }
-
-    Reference *Reference::setAttributeName(std::string attributeName) {
-        this->attributeName = attributeName;
-        return this;
-    }
-
-    uint32_t Reference::getLimit() {
-        return this->limit;
-    }
-
-    std::string Reference::getEntityName() {
-        return this->entityName;
-    }
-
-    std::string Reference::getAttributeName() {
-        return this->attributeName;
-    }
+Reference *Reference::setLimit(uint32_t limit) {
+    this->limit = limit;
+    return this;
 }
 
-namespace Csql {
-    Attribute *Attribute::setName(std::string name) {
-        this->name = name;
-        return  this;
-    }
+Reference *Reference::setEntityName(std::string entityName) {
+    this->entityName = entityName;
+    return this;
+}
 
-    Attribute *Attribute::setType(DataTypes type) {
-        this->type = type;
-        return this;
-    }
+Reference *Reference::setAttributeName(std::string attributeName) {
+    this->attributeName = attributeName;
+    return this;
+}
 
-    Attribute *Attribute::setNullable(bool nullable) {
-        this->nullable = nullable;
-        return this;
-    }
+uint32_t Reference::getLimit() {
+    return this->limit;
+}
 
-    Attribute *Attribute::setPrimary(bool primary) {
-        this->primary = primary;
-        return this;
-    }
+std::string Reference::getEntityName() {
+    return this->entityName;
+}
 
-    Attribute *Attribute::setUnique(bool unique) {
-        this->unique = unique;
-        return this;
-    }
-
-    Attribute *Attribute::setAutoIncrement(uint32_t autoIncrement) {
-        this->autoIncrement = autoIncrement;
-        return this;
-    }
-
-    Attribute *Attribute::setReference(Reference *reference) {
-        this->reference = reference;
-        return this;
-    }
+std::string Reference::getAttributeName() {
+    return this->attributeName;
+}
 
 
-    std::string Attribute::getName() {
-        return this->name;
-    }
+Attribute *Attribute::setName(std::string name) {
+    this->name = name;
+    return this;
+}
 
-    DataTypes Attribute::getType() {
-        return this->type;
-    }
+Attribute *Attribute::setType(DataTypes type) {
+    this->type = type;
+    return this;
+}
 
-    bool Attribute::isNull() {
-        if (primary || reference || unique) return false;
-        return this->nullable;
-    }
+Attribute *Attribute::setNullable(bool nullable) {
+    this->nullable = nullable;
+    return this;
+}
 
-    bool Attribute::isPrimary() {
-        return this->primary;
-    }
+Attribute *Attribute::setPrimary(bool primary) {
+    this->primary = primary;
+    return this;
+}
 
-    bool Attribute::isUnique() {
-        if (primary) return true;
-        return this->unique;
-    }
+Attribute *Attribute::setUnique(bool unique) {
+    this->unique = unique;
+    return this;
+}
+
+Attribute *Attribute::setAutoIncrement(uint32_t autoIncrement) {
+    this->autoIncrement = autoIncrement;
+    return this;
+}
+
+Attribute *Attribute::setReference(Reference *reference) {
+    this->reference = reference;
+    return this;
+}
 
 
-    bool Attribute::isAutoIncrement() {
-        return this->autoIncrement;
-    }
+std::string Attribute::getName() {
+    return this->name;
+}
 
-    uint32_t Attribute::getAutoIncrement() {
-        return this->autoIncrement;
-    }
+DataTypes Attribute::getType() {
+    return this->type;
+}
 
-    Reference *Attribute::getReference() {
-        return this->reference;
-    }
+bool Attribute::isNull() {
+    if (primary || reference || unique) return false;
+    return this->nullable;
+}
 
+bool Attribute::isPrimary() {
+    return this->primary;
+}
+
+bool Attribute::isUnique() {
+    if (primary) return true;
+    return this->unique;
+}
+
+
+bool Attribute::isAutoIncrement() {
+    return this->autoIncrement;
+}
+
+uint32_t Attribute::getAutoIncrement() {
+    return this->autoIncrement;
+}
+
+Reference *Attribute::getReference() {
+    return this->reference;
 }

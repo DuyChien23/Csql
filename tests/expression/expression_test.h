@@ -10,8 +10,6 @@
 
 #include "../../src/core/storage/expression/expression.h"
 
-using namespace Csql;
-
 class MockExpression : public Expression {
 public:
     MOCK_METHOD(SqlTypes, apply, (const JoinedTuple&), (override));

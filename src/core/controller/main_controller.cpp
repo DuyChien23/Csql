@@ -7,25 +7,23 @@
 #include "parsers/database_parser.h"
 #include "parsers/sql_parser.h"
 
-namespace Csql {
-    MainController::MainController(std::ostream &aOutput) : output(aOutput) {
-        parsers.push_back(new SqlParser(aOutput));
-        parsers.push_back(new DatabaseParser(aOutput));
-    }
+MainController::MainController(std::ostream &aOutput) : output(aOutput) {
+    parsers.push_back(new SqlParser(aOutput));
+    parsers.push_back(new DatabaseParser(aOutput));
+}
 
-    std::string MainController::getOutput() const {
-        std::stringstream temp;
-        temp << output.rdbuf();
-        return temp.str();
-    }
+std::string MainController::getOutput() const {
+    std::stringstream temp;
+    temp << output.rdbuf();
+    return temp.str();
+}
 
-    Statement *MainController::parser(Tokenizer &aTokenizer) {
-        for (auto parser : parsers) {
-            Statement* statement = parser->makeStatement(aTokenizer);
-            if (statement != nullptr) {
-                return statement;
-            }
+Statement *MainController::parser(Tokenizer &aTokenizer) {
+    for (auto parser: parsers) {
+        Statement *statement = parser->makeStatement(aTokenizer);
+        if (statement != nullptr) {
+            return statement;
         }
-        return nullptr;
     }
+    return nullptr;
 }

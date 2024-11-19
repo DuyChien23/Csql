@@ -8,7 +8,6 @@
 #include "../src/core/storage/page/b_plus_node/internal_b_plus_node.h"
 #include "../src/core/storage/page/b_plus_node/leaf_b_plus_node.h"
 
-using namespace Csql;
 
 class LeafPageTest : public LeafBPlusNode, public ::testing::Test {
 public:

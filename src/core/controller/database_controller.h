@@ -12,44 +12,42 @@
 #include "../util/errors.h"
 #include "../util/helpers.h"
 
-namespace Csql {
-    class DatabaseController {
-    public:
-        DatabaseController() = delete;
+class DatabaseController {
+public:
+    DatabaseController() = delete;
 
-        static DatabasePtr getDatabase() {
-            std::lock_guard lock(mtx);
-            auto id = std::this_thread::get_id();
-            if (!databases.contains(id)) {
-                throw Errors("No database selected");
-            }
-            return databases[id].get();
+    static DatabasePtr getDatabase() {
+        std::lock_guard lock(mtx);
+        auto id = std::this_thread::get_id();
+        if (!databases.contains(id)) {
+            throw Errors("No database selected");
+        }
+        return databases[id].get();
+    }
+
+    static void closeDatabase() {
+        std::lock_guard lock(mtx);
+        auto id = std::this_thread::get_id();
+        if (!databases.contains(id)) return;
+        databases[id].reset();
+        databases.erase(id);
+    }
+
+    static void setDatabase(const std::string &aDatabaseName) {
+        std::lock_guard lock(mtx);
+
+        if (!Helpers::FolderHandle::containFolder(Configs::databaseDictionaryName, aDatabaseName)) {
+            throw Errors("Database not exists");
         }
 
-        static void closeDatabase() {
-            std::lock_guard lock(mtx);
-            auto id = std::this_thread::get_id();
-            if (!databases.contains(id)) return;
-            databases[id].reset();
-            databases.erase(id);
-        }
+        auto id = std::this_thread::get_id();
+        databases[id] = std::make_unique<Database>(aDatabaseName);
+    }
 
-        static void setDatabase(const std::string& aDatabaseName) {
-            std::lock_guard lock(mtx);
+private:
+    static std::mutex mtx;
+    static std::map<std::thread::id, UniqueDatabasePtr> databases;
+};
 
-            if (!Helpers::FolderHandle::containFolder(Configs::databaseDictionaryName, aDatabaseName)) {
-                throw Errors("Database not exists");
-            }
-
-            auto id = std::this_thread::get_id();
-            databases[id] = std::make_unique<Database>(aDatabaseName);
-        }
-
-    private:
-        static std::mutex mtx;
-        static std::map<std::thread::id, UniqueDatabasePtr> databases;
-    };
-
-}
 
 #endif //CONTROLLER_INSTANCE_H

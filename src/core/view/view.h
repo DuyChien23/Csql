@@ -4,14 +4,12 @@
 
 #ifndef VIEW_H
 #define VIEW_H
-#include <ostream>
 
-namespace Csql {
-    class View {
+class View {
     public:
-        virtual ~View() {};
-        bool    show(std::ostream &aStream);
-    };
-}
+    virtual ~View() = default;
+    bool    show(std::ostream &aStream);
+};
+
 
 #endif //VIEW_H

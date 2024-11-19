@@ -7,7 +7,7 @@
 #include "../../util/errors.h"
 #include "../../util/helpers.h"
 
-Csql::SqlTypes Csql::BinaryExpression::apply(const JoinedTuple &tuple) {
+SqlTypes BinaryExpression::apply(const JoinedTuple &tuple) {
     SqlTypes left = lhs->apply(tuple);
     SqlTypes right = rhs->apply(tuple);
 
@@ -24,7 +24,8 @@ Csql::SqlTypes Csql::BinaryExpression::apply(const JoinedTuple &tuple) {
     }
 
     if (op == BinaryOperator::like || op == BinaryOperator::not_like) {
-        return static_cast<SqlBoolType>((op == BinaryOperator::not_like) ^ Helpers::ExpressionHandle::likeMatch(left, right));
+        return static_cast<SqlBoolType>((op == BinaryOperator::not_like) ^
+                                        Helpers::ExpressionHandle::likeMatch(left, right));
     }
 
     SqlTypeCompareResult compareResult = Helpers::ExpressionHandle::ExpressionHandle::compareSqlType(left, right);

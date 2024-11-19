@@ -9,8 +9,6 @@
 
 #include "../src/core/util/errors.h"
 
-using namespace Csql;
-
 class DatabaseTest : public Database, public ::testing::Test {
 public:
     DatabaseTest() : Database("database_a2k22") {

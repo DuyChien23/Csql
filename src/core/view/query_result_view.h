@@ -8,26 +8,26 @@
 
 #include "view.h"
 
-namespace Csql {
-    class QueryResultView : public View {
-    public:
-        QueryResultView(size_t aRowCount, std::string query, bool successful = true)
-            : numRowsAffected(aRowCount), query(query), successful(successful) {}
+class QueryResultView : public View {
+public:
+    QueryResultView(size_t aRowCount, std::string query, bool successful = true)
+        : numRowsAffected(aRowCount), query(query), successful(successful) {
+    }
 
-        bool show(std::ostream& aStream) {
-            if (successful) {
-                aStream << "Query [" << query << "\t] OK, " << numRowsAffected << " rows affected\n";
-            } else {
-                aStream << "Query failed. Cause: " << query << '\n';
-            }
-            return true;
+    bool show(std::ostream &aStream) {
+        if (successful) {
+            aStream << "Query [" << query << "\t] OK, " << numRowsAffected << " rows affected\n";
+        } else {
+            aStream << "Query failed. Cause: " << query << '\n';
         }
+        return true;
+    }
 
-    protected:
-        size_t numRowsAffected;
-        std::string query;
-        bool successful;
-    };
-}
+protected:
+    size_t numRowsAffected;
+    std::string query;
+    bool successful;
+};
+
 
 #endif //QUERYRESULTVIEW_H

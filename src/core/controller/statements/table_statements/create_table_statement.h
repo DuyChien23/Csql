@@ -9,20 +9,20 @@
 #include "../../../storage/database.h"
 #include "../../../storage/entity.h"
 
-namespace Csql {
-    class CreateTableStatement : public Statement {
-    public:
-        CreateTableStatement(SharedEntityPtr& aEntity, std::ostream& output) : Statement(output) {
-            entity = std::move(aEntity);
-        }
+class CreateTableStatement : public Statement {
+public:
+    CreateTableStatement(SharedEntityPtr &aEntity, std::ostream &output) : Statement(output) {
+        entity = std::move(aEntity);
+    }
 
-        void execute() override {
-            DatabasePtr database = DatabaseController::getDatabase();
-            database->createTable(output, entity);
-        }
-    protected:
-        SharedEntityPtr entity;
-    };
-}
+    void execute() override {
+        DatabasePtr database = DatabaseController::getDatabase();
+        database->createTable(output, entity);
+    }
+
+protected:
+    SharedEntityPtr entity;
+};
+
 
 #endif //CREATE_STATEMENT_H

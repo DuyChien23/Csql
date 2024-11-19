@@ -4,8 +4,5 @@
 
 #include "database_controller.h"
 
-namespace Csql {
-    std::mutex DatabaseController::mtx;
-    std::map<std::thread::id, UniqueDatabasePtr> DatabaseController::databases;
-
-}
+std::mutex DatabaseController::mtx;
+std::map<std::thread::id, UniqueDatabasePtr> DatabaseController::databases;

@@ -16,9 +16,9 @@ int main(int argc, const char * argv[]) {
         theServerPort = std::stoi(argv[2]);
     }
 
-    Csql::Helpers::FolderHandle::createIfNotExist(Configs::databaseDictionaryName);
+    Helpers::FolderHandle::createIfNotExist(Configs::databaseDictionaryName);
 
-    Csql::SQLServer theServer(theServerAddress, theServerPort);
+    SQLServer theServer(theServerAddress, theServerPort);
     theServer.run();
 }
 

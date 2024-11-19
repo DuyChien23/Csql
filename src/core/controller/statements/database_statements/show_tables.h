@@ -9,16 +9,16 @@
 #include "../../database_controller.h"
 #include "../../../storage/database.h"
 
-namespace Csql {
-    class ShowTablesStatement : public Statement {
-    public:
-        ShowTablesStatement(std::ostream& output) : Statement(output) {}
+class ShowTablesStatement : public Statement {
+public:
+    ShowTablesStatement(std::ostream &output) : Statement(output) {
+    }
 
-        void execute() override {
-            DatabasePtr database = DatabaseController::getDatabase();
-            database->showTables(output);
-        }
-    };
-}
+    void execute() override {
+        DatabasePtr database = DatabaseController::getDatabase();
+        database->showTables(output);
+    }
+};
+
 
 #endif //SHOW_TABLES_H

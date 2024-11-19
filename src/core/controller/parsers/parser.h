@@ -10,15 +10,18 @@
 
 #define RETURN_IF_CONDITION_FALSE(condition) if (!(condition)) {return nullptr;}
 
-namespace Csql {
-    class Parser {
-    public:
-        explicit Parser(std::ostream& aOutput) : output(aOutput) {};
-        virtual ~Parser() = default;
-        virtual Statement* makeStatement(Tokenizer &aTokenizer) = 0;
-    protected:
-        std::ostream& output;
+class Parser {
+public:
+    explicit Parser(std::ostream &aOutput) : output(aOutput) {
     };
-}
+
+    virtual ~Parser() = default;
+
+    virtual Statement *makeStatement(Tokenizer &aTokenizer) = 0;
+
+protected:
+    std::ostream &output;
+};
+
 
 #endif //PARSER_H

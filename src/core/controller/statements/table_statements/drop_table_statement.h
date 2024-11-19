@@ -9,20 +9,20 @@
 #include "../../database_controller.h"
 #include "../../../storage/database.h"
 
-namespace Csql {
-    class DropTableStatement : public Statement {
-    public:
-        DropTableStatement(const std::string& entityName, std::ostream& output) : Statement(output) {
-            this->entityName = entityName;
-        }
+class DropTableStatement : public Statement {
+public:
+    DropTableStatement(const std::string &entityName, std::ostream &output) : Statement(output) {
+        this->entityName = entityName;
+    }
 
-        void execute() override {
-            DatabasePtr database = DatabaseController::getDatabase();
-            database->dropTable(output, entityName);
-        }
-    protected:
-        std::string entityName;
-    };
-}
+    void execute() override {
+        DatabasePtr database = DatabaseController::getDatabase();
+        database->dropTable(output, entityName);
+    }
+
+protected:
+    std::string entityName;
+};
+
 
 #endif //DROP_ENTITY_STATEMENT_H

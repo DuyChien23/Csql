@@ -8,19 +8,19 @@
 #include "../statement.h"
 #include "../../../view/table_view.h"
 
-namespace Csql {
-    class ShowDatabasesStatement : public Statement {
-    public:
-        ShowDatabasesStatement(std::ostream& output) : Statement(output) {}
+class ShowDatabasesStatement : public Statement {
+public:
+    ShowDatabasesStatement(std::ostream &output) : Statement(output) {
+    }
 
-        void execute() override {
-            TableView theTableView("Databases");
-            Helpers::FolderHandle::eachFolder(Configs::databaseDictionaryName, [&](const std::string& folderName) {
-                theTableView.addData(folderName);
-            });
-            theTableView.show(output);
-        }
-    };
-}
+    void execute() override {
+        TableView theTableView("Databases");
+        Helpers::FolderHandle::eachFolder(Configs::databaseDictionaryName, [&](const std::string &folderName) {
+            theTableView.addData(folderName);
+        });
+        theTableView.show(output);
+    }
+};
+
 
 #endif //SHOW_DATABASES_H

@@ -6,28 +6,27 @@
 
 #include <assert.h>
 
-namespace Csql {
-    FreePage::FreePage(SlottedPage &theSlottedPage) {
-        this->pageIndex = theSlottedPage.pageIndex;
-        this->theEntity = theSlottedPage.get_the_entity();
-        memcpy(this->rawData, theSlottedPage.rawData, Configs::storageUnitSize);
-    }
 
-    void FreePage::refresh() {
-        loadType();
-        read(nextPage);
-    }
+FreePage::FreePage(SlottedPage &theSlottedPage) {
+    this->pageIndex = theSlottedPage.pageIndex;
+    this->theEntity = theSlottedPage.get_the_entity();
+    memcpy(this->rawData, theSlottedPage.rawData, Configs::storageUnitSize);
+}
 
-    void FreePage::save() {
-        saveType();
-        write(nextPage);
-    }
+void FreePage::refresh() {
+    loadType();
+    read(nextPage);
+}
 
-    void FreePage::addTuple(const Tuple &aTuple) {
-        assert(false);
-    }
+void FreePage::save() {
+    saveType();
+    write(nextPage);
+}
 
-    void FreePage::splitNode(SharedPagePtr left) {
-        assert(false);
-    }
+void FreePage::addTuple(const Tuple &aTuple) {
+    assert(false);
+}
+
+void FreePage::splitNode(SharedPagePtr left) {
+    assert(false);
 }

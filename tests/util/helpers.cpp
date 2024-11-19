@@ -2,7 +2,6 @@
 #include "../../src/core/util/helpers.h"
 #include "../../src/core/util/types.h"
 
-using namespace Csql;
 using namespace Helpers;
 
 TEST(SqlTypeHandleTest, sizeOfSqlType) {

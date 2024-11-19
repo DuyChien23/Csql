@@ -11,9 +11,8 @@
 #include "core/controller/tokenizer/expression_parser.h"
 #include "core/util/helpers.h"
 
-using namespace Csql;
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char *argv[]) {
     std::string text = "'abc' <> 'abc';";
     std::stringstream ss(text);
 

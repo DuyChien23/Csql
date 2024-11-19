@@ -8,23 +8,21 @@
 #include "value_expression.h"
 #include "../../util/errors.h"
 
-namespace Csql {
-    WhereExpression::WhereExpression() {
-        expression = new ValueExpression(true);
-    }
+WhereExpression::WhereExpression() {
+    expression = new ValueExpression(true);
+}
 
-    bool WhereExpression::apply(const JoinedTuple &tuple) const {
-        SqlTypes result = expression->apply(tuple);
-        if (!std::holds_alternative<SqlBoolType>(result)) throw Errors("Type of operand invalid");
+bool WhereExpression::apply(const JoinedTuple &tuple) const {
+    SqlTypes result = expression->apply(tuple);
+    if (!std::holds_alternative<SqlBoolType>(result)) throw Errors("Type of operand invalid");
 
-        return std::get<SqlBoolType>(result);
-    }
+    return std::get<SqlBoolType>(result);
+}
 
-    void WhereExpression::addAndExpression(Expression* anExpression) {
-        expression = new BinaryExpression(BinaryOperator::logic_and, expression, anExpression);
-    }
+void WhereExpression::addAndExpression(Expression *anExpression) {
+    expression = new BinaryExpression(BinaryOperator::logic_and, expression, anExpression);
+}
 
-    void WhereExpression::addOrExpression(Expression* anExpression) {
-        expression = new BinaryExpression(BinaryOperator::logic_or, expression, anExpression);
-    }
+void WhereExpression::addOrExpression(Expression *anExpression) {
+    expression = new BinaryExpression(BinaryOperator::logic_or, expression, anExpression);
 }
