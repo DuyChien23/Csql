@@ -6,10 +6,12 @@
 
 #include "parsers/database_parser.h"
 #include "parsers/sql_parser.h"
+#include "parsers/txn_parser.h"
 
 MainController::MainController(std::ostream &aOutput) : output(aOutput) {
     parsers.push_back(new SqlParser(aOutput));
     parsers.push_back(new DatabaseParser(aOutput));
+    parsers.push_back(new TxnParser(aOutput));
 }
 
 std::string MainController::getOutput() const {

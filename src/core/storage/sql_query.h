@@ -66,7 +66,24 @@ protected:
     std::vector<JoinExpression> listJoin;
 };
 
+class UpdateQuery {
+public:
+    UpdateQuery() = default;
+    void setEntityName(std::string anEntityName);
+    void addUpdate(std::string anAttributeName, Expression* anExpression);
+    void setWhereExpression(const WhereExpression &aWhereExpression);
+    std::string getEntityName();
+    std::vector<std::pair<std::string, Expression*>> &getUpdatesList();
+    WhereExpression &getWhereExpression();
+
+protected:
+    std::string entityName;
+    std::vector<std::pair<std::string, Expression*>> updatesList;
+    WhereExpression whereExpression;
+};
+
 using SQLQueryPtr = std::unique_ptr<SQLQuery>;
+using UpdateQueryPtr = std::unique_ptr<UpdateQuery>;
 
 
 #endif //SQL_QUERY_H

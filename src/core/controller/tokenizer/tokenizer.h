@@ -11,7 +11,7 @@
 #include "../../util/errors.h"
 
 enum class TokenType {
-    statement, identifier, keyword, number, operators, timedate, punctuation, string, unknown
+    statement, identifier, keyword, number, operators, timedate, punctuation, string, function, unknown
 };
 
 struct Token {
@@ -29,6 +29,7 @@ struct Token {
     TokenType type;
     SqlKeywords keyword;
     SqlOperators op;
+    SqlFunctions function;
     std::string data;
 };
 
@@ -48,6 +49,10 @@ public:
     Token *get();
 
     Tokenizer *check(SqlKeywords aKeyword);
+
+    Tokenizer *check(SqlOperators anOperator);
+
+    Tokenizer *check(SqlFunctions aFt);
 
     Tokenizer *check(std::string aData);
 
@@ -79,6 +84,12 @@ public:
                 return result;
             }
             return mSqlOperators[peek()->data] == firstData || result;
+        }
+        if constexpr (std::is_same_v<T, SqlFunctions>) {
+            if (peek()->type != TokenType::function) {
+                return result;
+            }
+            return mSqlFunctions[peek()->data] == firstData || result;
         }
         if constexpr (std::is_same_v<T, int>) {
             if (peek()->type != TokenType::number) {
@@ -117,13 +128,19 @@ public:
             if (peek()->type != TokenType::keyword) {
                 throw Errors("Unexpected token: " + peek()->data);
             }
-            aData = mSqlKeywords[peek()->data];
+            aData = peek()->keyword;
         }
         if constexpr (std::is_same_v<T, SqlOperators>) {
             if (peek()->type != TokenType::operators) {
                 throw Errors("Unexpected token: " + peek()->data);
             }
-            aData = mSqlOperators[peek()->data];
+            aData = peek()->op;
+        }
+        if constexpr (std::is_same_v<T, SqlFunctions>) {
+            if (peek()->type != TokenType::function) {
+                throw Errors("Unexpected token: " + peek()->data);
+            }
+            aData = peek()->function;
         }
         if constexpr (std::is_same_v<T, float>) {
             if (peek()->type != TokenType::number) {

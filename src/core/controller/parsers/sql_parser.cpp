@@ -12,6 +12,7 @@
 #include "../statements/table_statements/drop_table_statement.h"
 #include "../statements/table_statements/insert_statement.h"
 #include "../statements/table_statements/select_statement.h"
+#include "../statements/table_statements/update_statement.h"
 #include "../tokenizer/expression_parser.h"
 
 void getListString(Tokenizer *aTokenizer, std::vector<std::string> &list);
@@ -73,25 +74,27 @@ Statement *SqlParser::createEntityStatement(Tokenizer *aTokenizer) {
                     break;
                 }
 
-                SqlKeywords theKeyword;
-                aTokenizer->consumeType(theKeyword);
-                switch (theKeyword) {
-                    case SqlKeywords::primary_kw:
-                        aTokenizer->check(SqlKeywords::key_kw);
+                if (aTokenizer->currentIs(SqlOperators::not_op)) {
+                    aTokenizer->checkOne();
+                    aTokenizer->check(SqlKeywords::null_kw);
+                    theAtrribute->setNullable(false);
+                } else {
+                    SqlKeywords theKeyword;
+                    aTokenizer->consumeType(theKeyword);
+                    switch (theKeyword) {
+                        case SqlKeywords::primary_kw:
+                            aTokenizer->check(SqlKeywords::key_kw);
                         theAtrribute->setPrimary(true);
                         break;
-                    case SqlKeywords::auto_increment:
-                        theAtrribute->setAutoIncrement(true);
+                        case SqlKeywords::auto_increment:
+                            theAtrribute->setAutoIncrement(true);
                         break;
-                    case SqlKeywords::unique_kw:
-                        theAtrribute->setUnique(true);
+                        case SqlKeywords::unique_kw:
+                            theAtrribute->setUnique(true);
                         break;
-                    case SqlKeywords::not_kw:
-                        aTokenizer->check(SqlKeywords::null_kw);
-                        theAtrribute->setNullable(false);
-                        break;
-                    default:
-                        return nullptr;
+                        default:
+                            return nullptr;
+                    }
                 }
             }
 
@@ -255,14 +258,45 @@ Statement *SqlParser::selectStatement(Tokenizer *aTokenizer) {
 
 bool makeJoinExpression(Tokenizer *aTokenizer, ExpressionParser &expressionParser, SQLQueryPtr &theQuery) {
     if (aTokenizer->currentIs(SqlKeywords::inner_kw) || aTokenizer->currentIs(SqlKeywords::left_kw) || aTokenizer->
-        currentIs(SqlKeywords::right_kw)) {
-        SqlKeywords joinType;
+        currentIs(SqlKeywords::right_kw) || aTokenizer->currentIs(SqlKeywords::full_kw) || aTokenizer->currentIs(
+            SqlKeywords::cross_kw)) {
+        SqlKeywords joinTypeKW;
         std::string entityName;
-        aTokenizer->consumeType(joinType)->check(SqlKeywords::join_kw)->consumeType(entityName)->check(
-            SqlKeywords::on_kw);
-        theQuery->addJoinExpression(JoinExpression(expressionParser.parse()));
-        return false;
+
+        aTokenizer->consumeType(joinTypeKW)->check(SqlKeywords::join_kw)->consumeType(entityName);
+
+        JoinTypes joinType;
+        switch (joinTypeKW) {
+            case SqlKeywords::inner_kw:
+                joinType = JoinTypes::inner;
+                break;
+            case SqlKeywords::left_kw:
+                joinType = JoinTypes::left;
+                break;
+            case SqlKeywords::right_kw:
+                joinType = JoinTypes::right;
+                break;
+            case SqlKeywords::full_kw:
+                joinType = JoinTypes::full;
+                break;
+            case SqlKeywords::cross_kw:
+                joinType = JoinTypes::cross;
+                break;
+            default:
+                throw Errors("Join type not found");
+        }
+
+        if (joinType == JoinTypes::cross) {
+            theQuery->addJoinExpression(JoinExpression(new ValueExpression(true), joinType, entityName));
+            return true;
+        }
+
+        aTokenizer->check(SqlKeywords::on_kw);
+
+        theQuery->addJoinExpression(JoinExpression(expressionParser.parse(), joinType, entityName));
+        return true;
     }
+    return false;
 }
 
 Statement *SqlParser::deleteTuplesStatement(Tokenizer *aTokenizer) {
@@ -275,7 +309,42 @@ Statement *SqlParser::deleteTuplesStatement(Tokenizer *aTokenizer) {
     ExpressionParser expressionParser(aTokenizer);
     makeWhereExpression(aTokenizer, expressionParser, theQuery);
 
+    aTokenizer->endBy(";");
+
     return new DeleteTuplesStatement(theQuery, output);
+}
+
+Statement *SqlParser::updateStatement(Tokenizer *aTokenizer) {
+    UpdateQueryPtr theQuery = std::make_unique<UpdateQuery>();
+
+    std::string entityName;
+    aTokenizer->check(SqlKeywords::update_kw)->consumeType(entityName);
+    theQuery->setEntityName(entityName);
+    aTokenizer->check(SqlKeywords::set_kw);
+
+    while (true) {
+        std::string attributeName;
+        aTokenizer->consumeType(attributeName)->check("=");
+
+        ExpressionParser expressionParser(aTokenizer);
+        theQuery->addUpdate(attributeName, expressionParser.parse());
+
+        if (aTokenizer->currentIsChar(';') || aTokenizer->currentIs(SqlKeywords::where_kw)) {
+            break;
+        }
+        aTokenizer->check(",");
+    }
+
+    if (aTokenizer->currentIs(SqlKeywords::where_kw)) {
+        aTokenizer->check(SqlKeywords::where_kw);
+        ExpressionParser expressionParser(aTokenizer);
+        theQuery->setWhereExpression(WhereExpression(expressionParser.parse()));
+    } else {
+        theQuery->setWhereExpression(WhereExpression());
+    }
+
+    aTokenizer->endBy(";");
+    return new UpdateStatement(theQuery, output);
 }
 
 void makeWhereExpression(Tokenizer *aTokenizer, ExpressionParser &expressionParser, SQLQueryPtr &theQuery) {
@@ -286,3 +355,5 @@ void makeWhereExpression(Tokenizer *aTokenizer, ExpressionParser &expressionPars
         theQuery->setWhereExpression(WhereExpression());
     }
 }
+
+

@@ -34,6 +34,8 @@ namespace Helpers {
 
         static std::string covertSqlTypeToString(const SqlTypes &value);
 
+        static DataTypes covertSqlValueToDataTypes(const SqlTypes &value);
+
         static DataTypes covertStringToDataType(std::string type);
 
         static SqlTypes covertStringToSqlType(DataTypes type, std::string value);
@@ -117,6 +119,8 @@ namespace Helpers {
         static bool containFolder(const std::string &theFolder, const std::string &subFolder);
 
         static bool createIfNotExist(const std::string &theFolder, const std::string &pFolder = "");
+
+        static bool deleteIfExist(const std::string &theFolder, const std::string &pFolder = "");
 
         static void eachFolder(const std::string &theFolder, std::function<void(const std::string &)> aCallback);
     };

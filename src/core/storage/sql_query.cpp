@@ -69,3 +69,33 @@ std::pair<int, int> SQLQuery::getLimitCondition() {
 std::vector<JoinExpression> &SQLQuery::getListJoin() {
     return listJoin;
 }
+
+
+void UpdateQuery::setEntityName(std::string anEntityName) {
+    entityName = std::move(anEntityName);
+}
+
+void UpdateQuery::addUpdate(std::string anAttributeName, Expression *anExpression) {
+    updatesList.emplace_back(std::move(anAttributeName), anExpression);
+}
+
+
+void UpdateQuery::setWhereExpression(const WhereExpression &aWhereExpression) {
+    whereExpression = aWhereExpression;
+}
+
+std::string UpdateQuery::getEntityName() {
+    return entityName;
+}
+
+std::vector<std::pair<std::string, Expression *>> &UpdateQuery::getUpdatesList() {
+    return updatesList;
+}
+
+WhereExpression &UpdateQuery::getWhereExpression() {
+    return whereExpression;
+}
+
+
+
+

@@ -8,7 +8,7 @@
 #include <mutex>
 #include <thread>
 
-#include "../storage/database.h"
+#include "../storage/database/database.h"
 #include "../util/errors.h"
 #include "../util/helpers.h"
 

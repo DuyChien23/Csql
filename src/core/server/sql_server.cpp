@@ -50,7 +50,13 @@ void SQLServer::handleClient(TCPClient *clientSocket) {
             if (statement == nullptr) {
                 clientSocket->send("Failed to parse the statement");
             } else {
-                statement->execute();
+                if (DatabaseController::getDatabase()->transactionPtr == nullptr) {
+                    DatabaseController::getDatabase()->beginTransaction();
+                    statement->execute();
+                    DatabaseController::getDatabase()->commit();
+                } else {
+                    statement->execute();
+                }
                 clientSocket->send(mainController.getOutput().c_str());
             }
         } catch (Errors &e) {

@@ -7,7 +7,7 @@
 
 #include "../statement.h"
 #include "../../database_controller.h"
-#include "../../../storage/database.h"
+#include "../../../storage/database/database.h"
 
 class InsertStatement : public Statement {
 public:

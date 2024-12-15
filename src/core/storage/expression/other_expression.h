@@ -17,14 +17,14 @@ enum class OtherOperator {
 
 class OtherExpression : public Expression {
 public:
-    OtherExpression(OtherOperator _op, Expression *_value, std::vector<SqlTypes> _list);
+    OtherExpression(OtherOperator _op, Expression *_lhs, Expression *_rhs);
 
     SqlTypes apply(const JoinedTuple &tuple) override;
 
 private:
     OtherOperator op;
-    Expression *value;
-    std::vector<SqlTypes> list;
+    Expression *lhs;
+    Expression *rhs;
 };
 
 

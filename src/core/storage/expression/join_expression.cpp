@@ -5,17 +5,12 @@
 #include "join_expression.h"
 
 #include "binary_expression.h"
-#include "value_expression.h"
 #include "../../util/errors.h"
 
-JoinExpression::JoinExpression(JoinTypes type, std::string _targetEntityName) {
-    joinType = type;
-    targetEntityName = std::move(_targetEntityName);
-    expression = new ValueExpression(true);
-}
-
-JoinExpression::JoinExpression(Expression *anExpression) {
+JoinExpression::JoinExpression(Expression *anExpression, JoinTypes aJoinType, std::string aTargetEntityName) {
     expression = anExpression;
+    joinType = aJoinType;
+    targetEntityName = std::move(aTargetEntityName);
 }
 
 

@@ -132,22 +132,18 @@ void Storage::setBTree(IndexingMetadata &indexingMetadata, Tuple tuple) {
     }
 }
 
-void Storage::removeBtree(IndexingMetadata &indexingMetadata, const BPlusKey &key, SharedPagePtr node) {
+Tuple Storage::removeBtree(IndexingMetadata &indexingMetadata, const BPlusKey &key, SharedPagePtr node) {
     if (!node) {
         node = findLeaf(indexingMetadata, key);
     }
 
-    // std::cerr << "Before: ";
-    // node->printLog();
+    Tuple result;
 
     if (node->pageType == PageType::leaf_b_plus_node) {
-        removeFromLeaf(key, node);
+        result = removeFromLeaf(key, node);
     } else {
         removeFromInternal(key, node);
     }
-
-    // std::cerr << "After:  ";
-    // node->printLog();
 
     SharedPagePtr parent;
     readPage(indexingMetadata.entityName, node->parentIndex, parent);
@@ -165,7 +161,7 @@ void Storage::removeBtree(IndexingMetadata &indexingMetadata, const BPlusKey &ke
             } else {
                 writePage(node);
             }
-            return;
+            return result;
         }
 
         if (node->pageType == PageType::leaf_b_plus_node) {
@@ -264,6 +260,7 @@ void Storage::removeBtree(IndexingMetadata &indexingMetadata, const BPlusKey &ke
     if (parent) {
         removeBtree(indexingMetadata, key, parent);
     }
+    return result;
 }
 
 SharedPagePtr Storage::findLeaf(const IndexingMetadata &indexingMetadata, const BPlusKey &key) {
@@ -299,6 +296,9 @@ BtreeLeafIterator Storage::beginLeaf(const std::string &entityName, uint32_t nod
         readPage(entityName, nodeIndex, node);
 
         if (node->pageType == PageType::leaf_b_plus_node) {
+            if (node->get_tuples().empty()) {
+                return endLeaf();
+            }
             return BtreeLeafIterator(0, node);
         }
 
@@ -419,11 +419,12 @@ SplitNodeType Storage::splitInternal(SharedPagePtr node) {
     return std::make_tuple(key, left, node);
 }
 
-void Storage::removeFromLeaf(const BPlusKey &key, SharedPagePtr node) {
+Tuple Storage::removeFromLeaf(const BPlusKey &key, SharedPagePtr node) {
     int index = node->lower_bound(key, 0);
     if (index == -1) {
         throw Errors("Key not found");
     }
+    Tuple result = node->getTuple(index);
     node->deleteTuple(index);
     if (node->parentIndex) {
         SharedPagePtr parent;
@@ -434,6 +435,7 @@ void Storage::removeFromLeaf(const BPlusKey &key, SharedPagePtr node) {
             writePage(parent);
         }
     }
+    return result;
 }
 
 void Storage::removeFromInternal(const BPlusKey &key, SharedPagePtr node) {

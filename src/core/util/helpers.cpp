@@ -27,6 +27,25 @@ std::string SqlTypeHandle::covertSqlTypeToString(const SqlTypes &value) {
     }
 }
 
+DataTypes SqlTypeHandle::covertSqlValueToDataTypes(const SqlTypes &value) {
+    switch (value.index()) {
+        case sql_types_index_v<SqlNullType>:
+            return DataTypes::null_type;
+        case sql_types_index_v<SqlBoolType>:
+            return DataTypes::bool_type;
+        case sql_types_index_v<SqlDatetimeType>:
+            return DataTypes::datetime_type;
+        case sql_types_index_v<SqlIntType>:
+            return DataTypes::int_type;
+        case sql_types_index_v<SqlFloatType>:
+            return DataTypes::float_type;
+        case sql_types_index_v<SqlVarcharType>:
+            return DataTypes::varchar_type;
+        default:
+            throw Errors("Can't convert unknown type to data type");
+    }
+}
+
 DataTypes SqlTypeHandle::covertStringToDataType(std::string type) {
     if (type == "bool") return DataTypes::bool_type;
     if (type == "date") return DataTypes::datetime_type;
@@ -170,33 +189,31 @@ bool ExpressionHandle::likeMatch(const SqlTypes &lhs, const SqlTypes &rhs) {
     }
 
     std::string str = std::get<SqlVarcharType>(lhs);
-    std::string pattern = std::get<SqlVarcharType>(lhs);
+    std::string pattern = std::get<SqlVarcharType>(rhs);
 
-    size_t s = 0;
     size_t p = 0;
-    size_t star = std::string::npos;
-    size_t match = 0;
 
-    while (s < str.size()) {
-        if (p < pattern.size() && (pattern[p] == '_' || pattern[p] == str[s])) {
-            ++s;
-            ++p;
-        } else if (p < pattern.size() && pattern[p] == '%') {
-            star = p++;
-            match = s;
-        } else if (star != std::string::npos) {
-            p = star + 1;
-            s = ++match;
+    for (int i = 0; i < pattern.size(); ++i) {
+        if (pattern[i] == '%') continue;
+
+        if (i == 0 || pattern[i - 1] == '%') {
+            while (p < str.size() && str[p] != pattern[i]) {
+                ++p;
+            }
+
+            if (p == str.size()) {
+                return false;
+            }
         } else {
-            return false;
+            if (p == str.size() || str[p] != pattern[i]) {
+                return false;
+            }
         }
+
+        p++;
     }
 
-    while (p < pattern.size() && pattern[p] == '%') {
-        ++p;
-    }
-
-    return p == pattern.size();
+    return true;
 }
 
 //==========================================JOIN-HANDLE===================================================
@@ -282,7 +299,7 @@ Tuple TupleHandle::baseInternalBNode(const BPlusKey &key, const uint32_t &childI
 BPlusKey TupleHandle::genBNodeKey(const Tuple &aTuple, const IndexingMetadata &indexingMetadata) {
     BPlusKey key;
     for (auto &element: indexingMetadata.keys) {
-        key.push_back(SqlTypeHandle::convertToPairKeyElement(element));
+        key.push_back(SqlTypeHandle::convertToPairKeyElement(aTuple.at(element)));
     }
     return key;
 }
@@ -313,8 +330,18 @@ bool FolderHandle::containFolder(const std::string &theFolder, const std::string
 }
 
 bool FolderHandle::createIfNotExist(const std::string &theFolder, const std::string &pFolder) {
-    if (!std::filesystem::exists(theFolder)) {
-        return std::filesystem::create_directory((pFolder == "" ? "" : pFolder + "/") + theFolder);
+    std::string dir = (pFolder == "" ? "" : pFolder + "/") + theFolder;
+    if (!std::filesystem::exists(dir)) {
+        return std::filesystem::create_directory(dir);
+    }
+    return false;
+}
+
+bool FolderHandle::deleteIfExist(const std::string &theFolder, const std::string &pFolder) {
+    std::string dir = (pFolder == "" ? "" : pFolder + "/") + theFolder;
+    if (std::filesystem::exists(dir)) {
+        std::filesystem::remove_all(dir);
+        return true;
     }
     return false;
 }

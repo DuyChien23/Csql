@@ -59,4 +59,36 @@ public:
     void log();
 };
 
+namespace std {
+    template <>
+    struct hash<KeyElement> {
+        size_t operator()(const KeyElement& key) const {
+            return std::visit([](const auto& value) {
+                return std::hash<std::decay_t<decltype(value)>>()(value);
+            }, key);
+        }
+    };
+
+    template <>
+    struct hash<PairKeyElement> {
+        size_t operator()(const PairKeyElement& element) const {
+            size_t hash1 = std::hash<KeyElementType>()(element.first);
+            size_t hash2 = std::hash<KeyElement>()(element.second);
+            return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
+        }
+    };
+
+    template <>
+    struct hash<BPlusKey> {
+        size_t operator()(const BPlusKey& key) const {
+            size_t hashValue = 0;
+            std::hash<PairKeyElement> elementHash;
+            for (const auto& element : key) {
+                hashValue ^= elementHash(element) + 0x9e3779b9 + (hashValue << 6) + (hashValue >> 2);
+            }
+            return hashValue;
+        }
+    };
+}
+
 #endif //B_PLUS_KEY_H

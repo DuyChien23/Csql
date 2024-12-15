@@ -6,7 +6,7 @@
 #define CREATE_STATEMENT_H
 #include "../statement.h"
 #include "../../database_controller.h"
-#include "../../../storage/database.h"
+#include "../../../storage/database/database.h"
 #include "../../../storage/entity.h"
 
 class CreateTableStatement : public Statement {

@@ -22,11 +22,13 @@ public:
         SqlTypes value = expression->apply(tuple);
         switch (op) {
             case UnaryOperator::is_not:
-                return std::holds_alternative<SqlNullType>(value) ? !std::get<SqlBoolType>(value) : false;
-            case UnaryOperator::is_null:
-                return std::holds_alternative<SqlNullType>;
+                return !std::get<SqlBoolType>(value);
             default:
-                return !std::holds_alternative<SqlNullType>;
+                throw Errors("Invalid unary operator");
+            // case UnaryOperator::is_null:
+            //     return std::holds_alternative<SqlNullType>;
+            // default:
+            //     return !std::holds_alternative<SqlNullType>;
         }
     }
 

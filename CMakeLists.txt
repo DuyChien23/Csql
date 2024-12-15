@@ -10,7 +10,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 enable_testing()
 
-add_subdirectory(googletest)
+add_subdirectory(thirdparty)
 
 add_subdirectory(src)
 add_subdirectory(tests)

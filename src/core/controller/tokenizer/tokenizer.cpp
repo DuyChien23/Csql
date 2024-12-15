@@ -46,38 +46,55 @@ void Tokenizer::tokenize() {
                     theData.begin(), theData.end(), '.') > 1) {
                 throw Errors("Invalid number");
             }
-            tokens.push_back({TokenType::number, SqlKeywords::unkonwn_kw, SqlOperators::unknown_op, theData});
+            tokens.push_back({
+                TokenType::number, SqlKeywords::unkonwn_kw, SqlOperators::unknown_op, SqlFunctions::unknown_ft, theData
+            });
         } else if (isQuote(theChar)) {
             char theQuote = input.get();
             std::string theData = readUntilChar(theQuote);
-            tokens.push_back({TokenType::string, SqlKeywords::unkonwn_kw, SqlOperators::unknown_op, theData});
+            tokens.push_back({
+                TokenType::string, SqlKeywords::unkonwn_kw, SqlOperators::unknown_op, SqlFunctions::unknown_ft, theData
+            });
             if (!skipIfChar(theQuote)) {
                 throw Errors("Invalid quote");
             }
+        } else if (isPunctuation(theChar)) {
+            std::string theData = readOne();
+            tokens.push_back({
+                TokenType::punctuation, SqlKeywords::unkonwn_kw, SqlOperators::unknown_op, SqlFunctions::unknown_ft,
+                theData
+            });
         } else if (isOperator(theChar)) {
             std::string theData = read(isOperator);
             if (!mSqlOperators.contains(theData)) {
                 throw Errors("Invalid operator");
             }
-            tokens.push_back({TokenType::operators, SqlKeywords::unkonwn_kw, mSqlOperators[theData], theData});
-        } else if (isPunctuation(theChar)) {
-            std::string theData = readOne();
-            tokens.push_back({TokenType::punctuation, SqlKeywords::unkonwn_kw, SqlOperators::unknown_op, theData});
+            tokens.push_back({
+                TokenType::operators, SqlKeywords::unkonwn_kw, mSqlOperators[theData], SqlFunctions::unknown_ft, theData
+            });
         } else {
             std::string theData = read(isAlphaNum);
             std::string theTemp(theData);
             std::transform(theTemp.begin(), theTemp.end(), theTemp.begin(), ::tolower);
 
-            Token token{TokenType::keyword, SqlKeywords::unkonwn_kw, SqlOperators::unknown_op, theTemp};
+            Token token{
+                TokenType::keyword, SqlKeywords::unkonwn_kw, SqlOperators::unknown_op, SqlFunctions::unknown_ft, theTemp
+            };
 
             if (mSqlKeywords.contains(theTemp)) {
                 token.keyword = mSqlKeywords[theTemp];
-                tokens.push_back(token);
+            } else if (mSqlOperators.contains(theTemp)) {
+                token.type = TokenType::operators;
+                token.op = mSqlOperators[theTemp];
+                token.data = theData;
+            } else if (mSqlFunctions.contains(theTemp)) {
+                token.type = TokenType::function;
+                token.function = mSqlFunctions[theTemp];
             } else {
                 token.type = TokenType::identifier;
                 token.data = theData;
-                tokens.push_back(token);
             }
+            tokens.push_back(token);
         }
     }
 
@@ -111,7 +128,31 @@ Tokenizer *Tokenizer::check(SqlKeywords aKeyword) {
     if (peek()->type != TokenType::keyword) {
         throw Errors("Unexpected token: " + peek()->data);
     }
-    if (!mSqlKeywords.contains(peek()->data) || mSqlKeywords[peek()->data] != aKeyword) {
+    if (peek()->keyword != aKeyword) {
+        throw Errors("Unexpected token: " + peek()->data);
+    }
+    index++;
+
+    return this;
+}
+
+Tokenizer *Tokenizer::check(SqlOperators anOperator) {
+    if (peek()->type != TokenType::operators) {
+        throw Errors("Unexpected token: " + peek()->data);
+    }
+    if (peek()->op != anOperator) {
+        throw Errors("Unexpected token: " + peek()->data);
+    }
+    index++;
+
+    return this;
+}
+
+Tokenizer *Tokenizer::check(SqlFunctions aFt) {
+    if (peek()->type != TokenType::function) {
+        throw Errors("Unexpected token: " + peek()->data);
+    }
+    if (peek()->function != aFt) {
         throw Errors("Unexpected token: " + peek()->data);
     }
     index++;
@@ -145,7 +186,7 @@ bool Tokenizer::consumeAttribute(std::string &tableName, std::string &attributeN
         return false;
     }
     consumeType(tableName);
-    if (currentIsChar('.')) {
+    if (peek()->data == ".") {
         checkOne();
         consumeType(attributeName);
     } else {

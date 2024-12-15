@@ -13,13 +13,12 @@ enum class JoinTypes {
     left,
     right,
     cross,
+    full,
 };
 
 class JoinExpression {
 public:
-    JoinExpression(JoinTypes type, std::string _targetEntityName);
-
-    JoinExpression(Expression *anExpression);
+    JoinExpression(Expression *anExpression, JoinTypes aJoinType,std::string aTargetEntityName);
 
     [[nodiscard]] bool apply(const JoinedTuple &tuple) const;
 

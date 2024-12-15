@@ -13,7 +13,9 @@ namespace Configs {
     const uint32_t maxSlots = 3;
     const size_t cacheMaxSize = 100000;
     const std::string databaseDictionaryName = "Databases";
+    const std::string undoLogDictionary = "UndoLogs";
     const std::string entityFileExtension = ".csql";
+    const std::uintmax_t maxUndoLogFileSize = 256 * 1024 * 8;
 
     const std::string defaultServerAddress = "127.0.0.1";
     const unsigned short defaultServerPort = 8080;

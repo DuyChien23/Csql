@@ -7,17 +7,18 @@
 
 #include <memory>
 #include <cstring>
-#include <functional>
 #include <vector>
 
-#include "../../util/configs.h"
 #include "../../util/types.h"
+#include "../../util/configs.h"
 
 class IOManager {
 public:
-    IOManager() = default;
+    IOManager();
 
-    virtual ~IOManager() = default;
+    IOManager(uint32_t rawSize);
+
+    ~IOManager();
 
     //Write data of block to disk
     void encode(std::fstream &anOutput);
@@ -27,7 +28,9 @@ public:
 
     void resetBufferOffset();
 
-    char rawData[Configs::storageUnitSize] = {};
+    char* rawData;
+
+    uint32_t rawSize;
 
 protected:
     //Data temp

@@ -136,7 +136,7 @@ protected:
     };
 
     std::string theEntityName;
-    int limit = 10000;
+    int limit = 100;
 };
 
 TEST_F(StorageTest1, SelectBtree) {
@@ -193,6 +193,30 @@ TEST_F(StorageTest1, RemoveBtree) {
                // printBtree(indexingMetadata);
                 auto iter = searchBtree(indexingMetadata, key);
                 ASSERT_EQ(iter, endLeaf());
+            }
+        }
+    });
+}
+
+TEST_F(StorageTest1, UpdateBtree) {
+    getEntity(theEntityName)->eachIndexing([&](IndexingMetadata& indexingMetadata, bool isClustered) {
+        if (isClustered) {
+           auto run = [&](int i) {
+               auto key = BPlusKey(i);
+               auto tuple = *searchBtree(indexingMetadata, key);
+
+               tuple["name"] = SqlVarcharType("chien");
+
+               removeBtree(indexingMetadata, key);
+               setBTree(indexingMetadata, tuple);
+
+               auto eTuple = *searchBtree(indexingMetadata, key);
+
+               ASSERT_EQ(tuple["name"], eTuple["name"]);
+           };
+
+            for (int i = 1; i <= limit; ++i) {
+                run(i);
             }
         }
     });

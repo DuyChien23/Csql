@@ -5,7 +5,7 @@
 #ifndef DATABASE_PARSER_H
 #define DATABASE_PARSER_H
 #include "parser.h"
-#include "../../storage/database.h"
+#include "../../storage/database/database.h"
 
 class DatabaseParser : public Parser {
     using DatabaseParserFactory = Statement*(DatabaseParser::*)(Tokenizer *);
@@ -21,7 +21,8 @@ private:
         &DatabaseParser::useDatabaseStatement,
         &DatabaseParser::createDatabaseStatement,
         &DatabaseParser::showTableStatement,
-        &DatabaseParser::showDatabasesStatement
+        &DatabaseParser::showDatabasesStatement,
+        &DatabaseParser::dropDatabaseStatement
     };
 
     Statement *useDatabaseStatement(Tokenizer *aTokenizer);
@@ -31,6 +32,8 @@ private:
     Statement *showTableStatement(Tokenizer *aTokenizer);
 
     Statement *showDatabasesStatement(Tokenizer *aTokenizer);
+
+    Statement *dropDatabaseStatement(Tokenizer *aTokenizer);
 };
 
 

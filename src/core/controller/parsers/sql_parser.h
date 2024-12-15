@@ -22,7 +22,8 @@ private:
         &SqlParser::dropEntityStatement,
         &SqlParser::insertStatement,
         &SqlParser::selectStatement,
-        &SqlParser::deleteTuplesStatement
+        &SqlParser::deleteTuplesStatement,
+        &SqlParser::updateStatement
     };
 
     Statement *createEntityStatement(Tokenizer *aTokenizer);
@@ -36,6 +37,8 @@ private:
     Statement *selectStatement(Tokenizer *aTokenizer);
 
     Statement *deleteTuplesStatement(Tokenizer *aTokenizer);
+
+    Statement *updateStatement(Tokenizer *aTokenizer);
 };
 
 

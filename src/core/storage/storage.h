@@ -151,7 +151,7 @@ protected:
     //===========================================B+Tree=Interface=========================================
     void setBTree(IndexingMetadata &indexingMetadata, Tuple tuple);
 
-    void removeBtree(IndexingMetadata &indexingMetadata, const BPlusKey &key, SharedPagePtr node = nullptr);
+    Tuple removeBtree(IndexingMetadata &indexingMetadata, const BPlusKey &key, SharedPagePtr node = nullptr);
 
     SharedPagePtr findLeaf(const IndexingMetadata &indexingMetadata, const BPlusKey &key);
 
@@ -175,7 +175,7 @@ private:
 
     SplitNodeType splitInternal(SharedPagePtr node);
 
-    void removeFromLeaf(const BPlusKey &key, SharedPagePtr node);
+    Tuple removeFromLeaf(const BPlusKey &key, SharedPagePtr node);
 
     void removeFromInternal(const BPlusKey &key, SharedPagePtr node);
 

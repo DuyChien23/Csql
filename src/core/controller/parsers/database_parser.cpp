@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "../statements/database_statements/create_database.h"
+#include "../statements/database_statements/drop_database.h"
 #include "../statements/database_statements/show_tables.h"
 #include "../statements/database_statements/show_databases.h"
 #include "../statements/database_statements/use_database.h"
@@ -49,3 +50,11 @@ Statement *DatabaseParser::showDatabasesStatement(Tokenizer *aTokenizer) {
 
     return new ShowDatabasesStatement(output);
 }
+
+Statement *DatabaseParser::dropDatabaseStatement(Tokenizer *aTokenizer) {
+    std::string databaseName;
+    aTokenizer->check(SqlKeywords::drop_kw)->check(SqlKeywords::database_kw)->consumeType(databaseName)->endBy(";");
+
+    return new DropDatabaseStatement(databaseName, output);
+}
+

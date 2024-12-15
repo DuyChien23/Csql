@@ -2,12 +2,17 @@
 // Created by chiendd on 31/10/2024.
 //
 
-#include "../src/core/storage/database.h"
+#include "../src/core/storage/database/database.h"
 
 #include <math.h>
 #include <gtest/gtest.h>
 
+#include "../src/core/storage/expression/attribute_expression.h"
+#include "../src/core/storage/expression/binary_expression.h"
+#include "../src/core/storage/expression/value_expression.h"
 #include "../src/core/util/errors.h"
+#include "../src/core/util/helpers.h"
+#include "../thirdparty/json/single_include/nlohmann/json.hpp"
 
 class DatabaseTest : public Database, public ::testing::Test {
 public:
@@ -19,6 +24,10 @@ public:
         auto dbDict = "Databases/" + this->name;
         std::filesystem::remove_all(dbDict);
         std::filesystem::create_directory(dbDict);
+
+        auto undoDict = "UndoLogs/" + this->name;
+        std::filesystem::remove_all(undoDict);
+        std::filesystem::create_directory(undoDict);
     }
 
     void createT() {
@@ -33,8 +42,11 @@ public:
         createTable(std::cerr, entity);
     }
 
-    void insertT() {
-        std::vector<std::pair<std::string, std::string>> v({{"id", "1"}, {"name", "chien"}, {"email", "chien121803@gmail.com"}});
+    void insertT(int id) {
+        std::string t = std::to_string(id);
+        std::vector<std::pair<std::string, std::string> > v({
+            {"id", t}, {"name", "chien"}, {"email", "chien" + t + "@gmail.com"}
+        });
         insert(std::cerr, theEntityName, v, true);
     }
 
@@ -45,13 +57,33 @@ public:
         select(std::cerr, query);
     }
 
+    void updateT(int id, std::string name, std::string email) {
+        UpdateQueryPtr query = std::make_unique<UpdateQuery>();
+        query->setEntityName(theEntityName);
+        query->addUpdate("name", new ValueExpression(name));
+        query->addUpdate("email", new ValueExpression(email));
+        update(std::cerr, query);
+    }
+
+    void deleteT(int id) {
+        SQLQueryPtr query = std::make_unique<SQLQuery>();
+        query->setEntityName(theEntityName);
+        Expression *theExpression = new BinaryExpression(BinaryOperator::equal,
+                                                         new AttributeExpression(theEntityName, "id"),
+                                                         new ValueExpression(SqlIntType(id)));
+        query->setWhereExpression(WhereExpression(theExpression));
+        deleteTuples(std::cerr, query);
+    }
+
     std::string theEntityName;
 };
 
 TEST_F(DatabaseTest, CreateTable) {
     try {
         resetDB();
+        beginTransaction();
         createT();
+        commit();
     } catch (Errors e) {
         std::cerr << e.what() << '\n';
         EXPECT_TRUE(false);
@@ -61,8 +93,13 @@ TEST_F(DatabaseTest, CreateTable) {
 TEST_F(DatabaseTest, InsertTable) {
     try {
         resetDB();
+        beginTransaction();
         createT();
-        insertT();
+        commit();
+
+        beginTransaction();
+        insertT(1);
+        commit();
     } catch (Errors e) {
         std::cerr << e.what() << '\n';
         EXPECT_TRUE(false);
@@ -72,9 +109,74 @@ TEST_F(DatabaseTest, InsertTable) {
 TEST_F(DatabaseTest, SelectTable) {
     try {
         resetDB();
+        beginTransaction();
         createT();
-        insertT();
+        commit();
+
+        beginTransaction();
+        insertT(1);
+        commit();
+
+        beginTransaction();
+        insertT(2);
+        insertT(3);
         selectT();
+        abort();
+
+        beginTransaction();
+        selectT();
+    } catch (Errors e) {
+        std::cerr << e.what() << '\n';
+        EXPECT_TRUE(false);
+    }
+}
+
+TEST_F(DatabaseTest, DeleteTuple) {
+    try {
+        resetDB();
+        beginTransaction();
+        createT();
+        commit();
+
+        beginTransaction();
+        insertT(1);
+        selectT();
+        commit();
+
+        beginTransaction();
+        deleteT(1);
+        selectT();
+        abort();
+
+        beginTransaction();
+        selectT();
+        commit();
+    } catch (Errors e) {
+        std::cerr << e.what() << '\n';
+        EXPECT_TRUE(false);
+    }
+}
+
+TEST_F(DatabaseTest, UpdateTable) {
+    try {
+        resetDB();
+        beginTransaction();
+        createT();
+        commit();
+
+        beginTransaction();
+        insertT(1);
+        selectT();
+        commit();
+
+        beginTransaction();
+        updateT(1, "hanh", "dangiu");
+        selectT();
+        abort();
+
+        beginTransaction();
+        selectT();
+        commit();
     } catch (Errors e) {
         std::cerr << e.what() << '\n';
         EXPECT_TRUE(false);

@@ -7,16 +7,37 @@
 
 #include <string>
 
-#include "sql_query.h"
-#include "storage.h"
+#include "../sql_query.h"
+#include "../storage.h"
+#include "../../controller/concurrency/lock_manager.h"
+
+#define LOCK_TABLE_SHARED(tableName) if (!LockManagerInstance::get(name)->lockTable(transactionPtr.get(), LockMode::SHARED, tableName)) \
+    throw Errors("Can't lock table " + tableName + " in shared mode")
+#define LOCK_TABLE_EXCLUSIVE(tableName) if (!LockManagerInstance::get(name)->lockTable(transactionPtr.get(), LockMode::EXCLUSIVE, tableName)) \
+    throw Errors("Can't lock table " + tableName + " in exclusive mode")
+
+#define UNLOCK_TABLE(tableName) LockManagerInstance::get(name)->unlockTable(transactionPtr.get(), tableName)
+
+enum class ConditionType {
+    equal_condition,
+    greater_than_condition,
+    less_than_condition,
+    between_condition,
+};
+
+struct Condition {
+    std::string attributeName;
+    ConditionType conditionType;
+    std::vector<SqlTypes> values;
+};
 
 class Database : public Storage {
 public:
     Database(std::string databaseName) : Storage(databaseName) {
+         transactionPtr = nullptr;
     };
 
-    ~Database() {
-    };
+    ~Database() = default;
 
     void createTable(std::ostream &anOutput, SharedEntityPtr &anEntityPtr);
 
@@ -36,6 +57,17 @@ public:
 
     void deleteTuples(std::ostream &anOutput, const SQLQueryPtr &aDeleteQuery);
 
+    void update(std::ostream &anOutput, const UpdateQueryPtr &aUpdateQuery);
+
+    void beginTransaction();
+
+    void abort();
+
+    void commit();
+
+    void undo();
+
+    TransactionPtr transactionPtr = nullptr;
 private:
     void validateCreateTable(const SharedEntityPtr &anEntityPtr);
 
@@ -46,6 +78,8 @@ private:
     void validateTableExisted(std::string aEntityName);
 
     void validateTableNotExisted(std::string aEntityName);
+
+    std::vector<Tuple> getRowsByCondition(const std::string &entityName, std::vector<Condition> &conditions);
 };
 
 using DatabasePtr = Database *;

@@ -53,7 +53,7 @@ public:
         this->name = std::move(entityName);
     };
 
-    ~Entity() override = default;
+    ~Entity() = default;
 
     void save();
 

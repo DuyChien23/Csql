@@ -1,4 +1,4 @@
-#include "../src/core/storage/database.h"
+#include "../src/core/storage/database/database.h"
 #include "../src/core/storage/expression/attribute_expression.h"
 #include "../src/core/storage/expression/binary_expression.h"
 #include "../src/core/storage/expression/value_expression.h"

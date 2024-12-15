@@ -28,7 +28,7 @@ public:
 
     SlottedPage() = default;
 
-    ~SlottedPage() override = default;
+    ~SlottedPage() = default;
 
     void loadType();
 
