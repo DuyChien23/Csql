@@ -12,7 +12,7 @@
 #include "../src/core/storage/expression/value_expression.h"
 #include "../src/core/util/errors.h"
 #include "../src/core/util/helpers.h"
-#include "../thirdparty/json/single_include/nlohmann/json.hpp"
+#include "../third_party/json/single_include/nlohmann/json.hpp"
 
 class DatabaseTest : public Database, public ::testing::Test {
 public:
