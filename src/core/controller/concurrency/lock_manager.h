@@ -9,6 +9,8 @@
 #include <thread>
 #include <unordered_map>
 #include <atomic>
+#include <map>
+#include <set>
 
 #include "transaction.h"
 #include "../../util/b_plus_key.h"
@@ -30,8 +32,8 @@ enum class LockMode { SHARED, EXCLUSIVE, INTENTION_SHARED, INTENTION_EXCLUSIVE, 
 
 class LockRequest {
 public:
-    LockRequest(txn_id_t txn_id, LockMode lock_mode, std::string _tableName) /** Table lock request */
-      : txnId(txn_id), lockMode(lock_mode), tableName(std::move(_tableName)) {}
+    LockRequest(txn_id_t _txn_id, LockMode lock_mode, std::string _tableName) /** Table lock request */
+      : txnId(_txn_id), lockMode(lock_mode), tableName(std::move(_tableName)) {}
     LockRequest(txn_id_t _txnId, LockMode _lockMode, RID _rid)
         : txnId(_txnId), lockMode(_lockMode), rid(std::move(_rid)) {};
 
@@ -61,6 +63,14 @@ public:
     auto lockRow(Transaction *txn, LockMode lockMode, const RID &rid) -> bool;
     auto unlockRow(Transaction *txn, const RID &rid) -> bool;
 
+    auto makeWaitVertex(txn_id_t t) -> void;
+    auto addEdge(txn_id_t t1, txn_id_t t2) -> void;
+    auto removeEdge(txn_id_t t1, txn_id_t t2) -> void;
+    auto removeAllEdge(txn_id_t t2) -> void;
+    auto checkVertex(txn_id_t t2) -> bool;
+    auto hasCycle(txn_id_t t) -> bool;
+    auto RunCycleDetection() -> void;
+
     auto releaseAllLocks(Transaction *txn) -> void;
 
 private:
@@ -70,10 +80,7 @@ private:
     std::unordered_map<RID, std::shared_ptr<LockRequestQueue>> rowLockmap;
     std::mutex row_lock_map_latch;
 
-    std::atomic<bool> enable_cycle_detection;
-    std::thread *cycle_detection_thread;
-    /** Waits-for graph representation. */
-    std::unordered_map<txn_id_t, std::vector<txn_id_t>> waits_for;
+    std::map<txn_id_t, std::set<txn_id_t>> waits_for;
     std::mutex waits_for_latch;
 };
 
@@ -92,6 +99,15 @@ public:
         if (instances.contains(databaseName)) {
             delete instances[databaseName];
             instances.erase(databaseName);
+        }
+    }
+
+    static void RunCycleDetection() {
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            for (auto &instance : instances) {
+                instance.second->RunCycleDetection();
+            }
         }
     }
 private:

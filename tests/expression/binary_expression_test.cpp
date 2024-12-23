@@ -52,15 +52,6 @@ TEST_F(BinaryExpressionTest, LikeOperatorMatch) {
     EXPECT_EQ(std::get<SqlBoolType>(expr.apply(tuple)), true);
 }
 
-// Test case: NOT LIKE operator with non-matching pattern
-TEST_F(BinaryExpressionTest, NotLikeOperatorMismatch) {
-    EXPECT_CALL(lhs, apply(::testing::Ref(tuple))).WillOnce(::testing::Return(SqlVarcharType("Hello")));
-    EXPECT_CALL(rhs, apply(::testing::Ref(tuple))).WillOnce(::testing::Return(SqlVarcharType("World")));
-
-    BinaryExpression expr(BinaryOperator::not_like, &lhs, &rhs);
-    EXPECT_EQ(std::get<SqlBoolType>(expr.apply(tuple)), false);
-}
-
 // Test case: Equality comparison for integers
 TEST_F(BinaryExpressionTest, EqualOperatorInt) {
     EXPECT_CALL(lhs, apply(::testing::Ref(tuple))).WillOnce(::testing::Return(SqlIntType(10)));

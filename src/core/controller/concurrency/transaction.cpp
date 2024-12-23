@@ -11,7 +11,7 @@ Transaction::Transaction(TransactionState ts, IsolationLevel isL, std::thread::i
     transactionState = ts;
     isolationLevel = isL;
     threadID = tID;
-
-    holdShareLocks = std::make_shared<std::unordered_set<std::string>>();
-    holdExclusiveLocks = std::make_shared<std::unordered_set<std::string>>();
+    //
+    // holdTableLocks = std::make_shared<std::unordered_set<std::string>>();
+    // holdRowLocks = std::make_shared<std::unordered_set<std::string>>();
 }

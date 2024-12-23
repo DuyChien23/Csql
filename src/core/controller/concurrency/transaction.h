@@ -5,7 +5,6 @@
 #ifndef TRANSACTION_H
 #define TRANSACTION_H
 #include <thread>
-#include <unordered_set>
 
 using txn_id_t = int;
 
@@ -23,9 +22,9 @@ public:
     TransactionState    transactionState;
     IsolationLevel      isolationLevel;
     std::thread::id     threadID;
-
-    std::shared_ptr<std::unordered_set<std::string>> holdShareLocks = nullptr;
-    std::shared_ptr<std::unordered_set<std::string>> holdExclusiveLocks = nullptr;
+    //
+    // std::shared_ptr<std::unordered_set<std::string>> holdTableLocks = nullptr;
+    // std::shared_ptr<std::unordered_set<RID>> holdRowLocks = nullptr;
 };
 
 using TransactionPtr= std::shared_ptr<Transaction>;

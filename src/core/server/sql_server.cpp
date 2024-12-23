@@ -14,6 +14,8 @@ SQLServer::SQLServer(const std::string &aHost, unsigned short aPort) : tcpServer
 };
 
 void SQLServer::run() {
+    std::thread temp(LockManagerInstance::RunCycleDetection);
+
     tcpServer.execute();
     while (true) {
         TCPClient *clientSocket = tcpServer.acceptConnection();

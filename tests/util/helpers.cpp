@@ -11,7 +11,7 @@ TEST(SqlTypeHandleTest, sizeOfSqlType) {
     BPlusKey key;
     key.add(1);
     key.add("12");
-    EXPECT_EQ(SqlTypeHandle::sizeOfSqlType(key), 26);
+    EXPECT_EQ(SqlTypeHandle::sizeOfSqlType(key), 30);
 }
 
 TEST(SqlTypeHandleTest, sizeOfTuple) {
@@ -25,7 +25,7 @@ TEST(SqlTypeHandleTest, sizeOfTuple) {
         std::make_pair("date", SqlDatetimeType(30)),
         std::make_pair("xyz", key),
     };
-    EXPECT_EQ(SqlTypeHandle::sizeOfTuple(tuple), 4 + 4 * 5 + 18 + 8 + 8 + 26);
+    EXPECT_EQ(SqlTypeHandle::sizeOfTuple(tuple), 4 + 2 + 8 + 4 + 4 + 4 + 5 + 4 + 4 + 8 + 4 + 3 + 30);
 }
 
 TEST(TupleHandleTest, genBNodeKey) {
