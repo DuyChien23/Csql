@@ -78,7 +78,7 @@ void Tokenizer::tokenize() {
             std::transform(theTemp.begin(), theTemp.end(), theTemp.begin(), ::tolower);
 
             Token token{
-                TokenType::keyword, SqlKeywords::unkonwn_kw, SqlOperators::unknown_op, SqlFunctions::unknown_ft, theTemp
+                TokenType::keyword, SqlKeywords::unkonwn_kw, SqlOperators::unknown_op, SqlFunctions::unknown_ft, theData
             };
 
             if (mSqlKeywords.contains(theTemp)) {
@@ -86,13 +86,14 @@ void Tokenizer::tokenize() {
             } else if (mSqlOperators.contains(theTemp)) {
                 token.type = TokenType::operators;
                 token.op = mSqlOperators[theTemp];
-                token.data = theData;
             } else if (mSqlFunctions.contains(theTemp)) {
                 token.type = TokenType::function;
                 token.function = mSqlFunctions[theTemp];
+            } else if (mSqlAggregateFunctions.contains(theTemp)) {
+                token.type = TokenType::function;
+                token.function = mSqlAggregateFunctions[theTemp];
             } else {
                 token.type = TokenType::identifier;
-                token.data = theData;
             }
             tokens.push_back(token);
         }
@@ -102,6 +103,19 @@ void Tokenizer::tokenize() {
         tokens.pop_back();
     }
 }
+
+std::string Tokenizer::getStringUntil(std::string aData) {
+    std::string result = "";
+    for (int i = index; tokens[i].data != aData; ++i) {
+        if (i == tokens.size()) {
+            throw Errors("Unexpected end of statement");
+        }
+        result += tokens[i].data;
+    }
+    result += aData;
+    return result;
+}
+
 
 size_t Tokenizer::size() const {
     return tokens.size();

@@ -8,6 +8,29 @@
 #include "../../view/query_result_view.h"
 #include "../../view/table_view.h"
 
+namespace std {
+    template <>
+    struct hash<SqlTypes> {
+        std::size_t operator()(const SqlTypes& t) const {
+            return std::visit([](auto&& arg) {
+                return std::hash<std::decay_t<decltype(arg)>>{}(arg);  // Băm từng kiểu trong variant
+            }, t);
+        }
+    };
+
+
+    template <>
+    struct hash<std::vector<SqlTypes>> {
+        std::size_t operator()(const std::vector<SqlTypes>& v) const {
+            std::size_t seed = 0;
+            for (const auto& elem : v) {
+                seed ^= std::hash<SqlTypes>{}(elem) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            }
+            return seed;
+        }
+    };
+}
+
 void Database::select(std::ostream &anOutput, SQLQueryPtr &aSelectQuery) {
     LOCK_TABLE_SHARED(aSelectQuery->getEntityName());
     for (auto &joinExpression: aSelectQuery->getListJoin()) {
@@ -24,7 +47,7 @@ void Database::select(std::ostream &anOutput, SQLQueryPtr &aSelectQuery) {
         auto addTargetFromEntity = [&](std::string entityName) {
             validateTableExisted(entityName);
             getEntity(entityName)->eachAttribute([&](Attribute *anAttribute) {
-                aSelectQuery->addTaget(entityName, anAttribute->getName());
+                aSelectQuery->addTarget(entityName, anAttribute->getName());
             });
         };
         addTargetFromEntity(theEntityName);
@@ -32,6 +55,8 @@ void Database::select(std::ostream &anOutput, SQLQueryPtr &aSelectQuery) {
             addTargetFromEntity(joinExpression.targetEntityName);
         }
     }
+
+    TableView theTableView(aSelectQuery->headers);
 
     //=====================MAIN=TABLE==================================================
     std::vector<Condition> conditions(0);
@@ -130,16 +155,113 @@ void Database::select(std::ostream &anOutput, SQLQueryPtr &aSelectQuery) {
         }
     }
 
-    //=================TABLE-VIEW=======================================================
-    TableView theTableView(aSelectQuery->headers);
+    //=================GROUP-BY=======================================================
+    std::vector<std::vector<SqlTypes>> datas;
 
-    for (auto &row: result) {
+    if (aSelectQuery->getGroupConditions().empty()) {
+        if (aSelectQuery->isAggregated) {
+            std::vector<SqlTypes> data;
+            for (auto &target: aSelectQuery->getTargets()) {
+                data.push_back(target->apply(result));
+            }
+            datas.push_back(data);
+        } else {
+            for (auto &row : result) {
+                std::vector<SqlTypes> data;
+                for (auto &target: aSelectQuery->getTargets()) {
+                    data.push_back(target->apply({row}));
+                }
+                datas.push_back(data);
+            }
+        }
+    } else {
+        std::unordered_map<std::vector<SqlTypes>, std::vector<JoinedTuple>> groupMap;
+        for (auto &row: result) {
+            std::vector<SqlTypes> group;
+            for (auto &groupCondition: aSelectQuery->getGroupConditions()) {
+                group.push_back(row[{groupCondition.first, groupCondition.second}]);
+            }
+            groupMap[group].push_back(row);
+        }
+
+        for (auto &[key, value]: groupMap) {
+            std::vector<SqlTypes> data;
+            for (auto &target: aSelectQuery->getTargets()) {
+                data.push_back(target->apply(value));
+            }
+            datas.push_back(data);
+        }
+    }
+
+    //=================ORDER-BY=======================================================
+    if (!aSelectQuery->getOrderConditions().empty()) {
+        std::vector<int> ids;
+        bool flag = false;
+        for (auto &[t, _]: aSelectQuery->getOrderConditions()) {
+            for (int i = 0; i < aSelectQuery->headers.size(); ++i) {
+                auto &header = aSelectQuery->headers.at(i);
+                if (!t.first.empty()) {
+                    if (header == t.first + "." + t.second) {
+                        ids.push_back(i);
+                        flag = true;
+                        break;
+                    }
+                } else {
+                    auto getAttributeName = [&](const std::string& header) {
+                        std::string ans;
+                        for (auto c : header) {
+                            if (c == '.') {
+                                ans = "";
+                            } else {
+                                ans += c;
+                            }
+                        }
+                        return ans;
+                    };
+                    if (header == t.second || getAttributeName(header) == t.second) {
+                        ids.push_back(i);
+                        flag = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!flag) {
+                throw Errors("Column name not found");
+            }
+        }
+
+        std::sort(datas.begin(), datas.end(), [&](std::vector<SqlTypes> &a, std::vector<SqlTypes> &b) {
+            for (int i = 0; i < ids.size(); ++i) {
+                auto &id = ids[i];
+                auto orderType = aSelectQuery->getOrderConditions().at(i).second;
+
+                if (a[id] != b[id]) {
+                    if (orderType == OrderType::asc) {
+                        return a[id] < b[id];
+                    } else {
+                        return a[id] > b[id];
+                    }
+                }
+            }
+
+            return false;
+        });
+    }
+
+    //=================LIMIT===========================================================
+    int start = aSelectQuery->getLimitCondition().second;
+    int end = std::min(int(datas.size()), start + aSelectQuery->getLimitCondition().first);
+
+
+    for (; start < end; ++start) {
         std::vector<std::string> data;
-        for (auto &target: aSelectQuery->getTargets()) {
-            data.push_back(Helpers::SqlTypeHandle::covertSqlTypeToString(row[target]));
+        for (auto v : datas[start]) {
+            data.push_back(Helpers::SqlTypeHandle::covertSqlTypeToString(v));
         }
         theTableView.addData(data);
     }
 
     theTableView.show(anOutput);
 }
+

@@ -6,6 +6,15 @@
 
 #include "../../storage/entity.h"
 #include "../../storage/expression/value_expression.h"
+#include "../../storage/expression/aggregate_expression/avg_expression.h"
+#include "../../storage/expression/aggregate_expression/count_all_expression.h"
+#include "../../storage/expression/aggregate_expression/count_expression.h"
+#include "../../storage/expression/aggregate_expression/group_concat_expression.h"
+#include "../../storage/expression/aggregate_expression/max_expression.h"
+#include "../../storage/expression/aggregate_expression/min_expression.h"
+#include "../../storage/expression/aggregate_expression/normal_expression.h"
+#include "../../storage/expression/aggregate_expression/sum_expression.h"
+
 #include "../statements/table_statements/create_table_statement.h"
 #include "../statements/table_statements/delete_tuples_statement.h"
 #include "../statements/table_statements/describe_table_statement.h"
@@ -181,16 +190,70 @@ Statement *SqlParser::selectStatement(Tokenizer *aTokenizer) {
         aTokenizer->checkOne();
     } else {
         while (!terminateCheck()) {
-            std::string s1, s2, columnName = "";
+            std::string s1, s2, columnName;
+            TargetExpression* target;
 
-            aTokenizer->consumeAttribute(s1, s2);
+            if (aTokenizer->consumeAttribute(s1, s2)) {
+                target = new NormalExpression(s1, s2);
+                columnName = (s1.empty() ? s2 : s1 + "." + s2);
+            } else {
+                columnName = aTokenizer->getStringUntil(")");
+                SqlFunctions theFunction;
+                aTokenizer->consumeType(theFunction);
 
-            if (aTokenizer->currentIs(SqlKeywords::as_kw)) {
-                aTokenizer->check(SqlKeywords::as_kw);
-                aTokenizer->consumeType(columnName);
+                aTokenizer->check("(");
+
+                if (theFunction == SqlFunctions::count_ft && aTokenizer->peek()->data == "*") {
+                    aTokenizer->checkOne();
+                    target = new CountAllExpression();
+                } else {
+                    ExpressionParser expressionParser(aTokenizer);
+                    Expression* expression = expressionParser.parse(")");
+
+                    switch (theFunction) {
+                        case SqlFunctions::count_ft: {
+                            target = new CountExpression(expression);
+                            break;
+                        }
+                        case SqlFunctions::sum_ft: {
+                            target = new SumExpression(expression);
+                            break;
+                        }
+                        case SqlFunctions::avg_ft: {
+                            target = new AvgExpression(expression);
+                            break;
+                        }
+                        case SqlFunctions::max_ft: {
+                            target = new MaxExpression(expression);
+                            break;
+                        }
+                        case SqlFunctions::min_ft: {
+                            target = new MinExpression(expression);
+                            break;
+                        }
+                        case SqlFunctions::group_concat_ft: {
+                            std::string split = ",";
+                            if (aTokenizer->currentIsChar(',')) {
+                                aTokenizer->checkOne();
+                                aTokenizer->consumeType(split);
+                            }
+                            target = new GroupConcatExpression(expression, split);
+                            break;
+                        }
+                        default:
+                            throw Errors("Function not found");
+                    }
+                }
+
+                aTokenizer->check(")");
             }
 
-            theQuery->addTaget(s1, s2, columnName);
+
+            if (aTokenizer->currentIs(SqlKeywords::as_kw)) {
+                aTokenizer->check(SqlKeywords::as_kw)->consumeType(columnName);
+            }
+
+            theQuery->addTarget(target, columnName);
 
             if (terminateCheck()) {
                 break;
@@ -229,17 +292,22 @@ Statement *SqlParser::selectStatement(Tokenizer *aTokenizer) {
         aTokenizer->check(SqlKeywords::order_kw)->check(SqlKeywords::by_kw);
 
         std::string tableName, attributeName;
-        aTokenizer->consumeAttribute(tableName, attributeName);
-        OrderType orderType = OrderType::asc;
-        if (aTokenizer->currentIs(SqlKeywords::desc_kw)) {
-            aTokenizer->check(SqlKeywords::desc_kw);
-            orderType = OrderType::desc;
-        } else {
-            if (aTokenizer->currentIs(SqlKeywords::asc_kw)) {
-                aTokenizer->checkOne();
+        while (aTokenizer->consumeAttribute(tableName, attributeName)) {
+            OrderType orderType = OrderType::asc;
+            if (aTokenizer->currentIs(SqlKeywords::desc_kw)) {
+                aTokenizer->check(SqlKeywords::desc_kw);
+                orderType = OrderType::desc;
+            } else {
+                if (aTokenizer->currentIs(SqlKeywords::asc_kw)) {
+                    aTokenizer->checkOne();
+                }
+            }
+            theQuery->addOrderCondition(tableName, attributeName, orderType);
+
+            if (aTokenizer->currentIsChar(',')) {
+                aTokenizer->check(",");
             }
         }
-        theQuery->addOrderCondition(tableName, attributeName, orderType);
     }
     //==================================LIMIT================================
     if (aTokenizer->currentIs(SqlKeywords::limit_kw)) {

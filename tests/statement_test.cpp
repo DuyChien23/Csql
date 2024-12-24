@@ -70,12 +70,11 @@ void prehandle() {
 TEST(StatementTest, SelectStatement) {
     prehandle();
     executeStatement("BEGIN TRANSACTION;");
-    executeStatement("UPDATE A SET name = concat(A.name, 'xxx') where A.customer_id <> 2;").logln();
-    executeStatement("SELECT * FROM A;").logln();
-    executeStatement("COMMIT;");
-    executeStatement("BEGIN TRANSACTION;");
-    executeStatement("DELETE FROM A WHERE A.name not like '%xxx';").logln();
-    executeStatement("SELECT * FROM A;").logln();
+    executeStatement("SELECT count(*) FROM A;").logln();
+    executeStatement("SELECT count(customer_id) FROM A GROUP BY name;").logln();
+    executeStatement("SELECT sum(customer_id), max(customer_id), min(customer_id), avg(customer_id) FROM A;").logln();
+    executeStatement("SELECT group_concat(name) FROM A;").logln();
+    executeStatement("SELECT group_concat(name, '|') FROM A;").logln();
     executeStatement("COMMIT;");
 }
 

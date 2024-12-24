@@ -10,6 +10,7 @@
 
 #include "expression/join_expression.h"
 #include "expression/where_expression.h"
+#include "expression/aggregate_expression/target_expression.h"
 
 
 enum class OrderType {
@@ -22,7 +23,9 @@ public:
 
     void setEntityName(std::string anEntityName);
 
-    void addTaget(std::string entityName, std::string attributeName, std::string columnName = "");
+    void addTarget(TargetExpression *tExp, const std::string& columnName);
+    void addTarget(const std::string& entityName, const std::string& attributeName);
+    void addHeader(std::string columnName);
 
     void setWhereExpression(const WhereExpression &aWhereExpression);
 
@@ -36,7 +39,8 @@ public:
 
     std::string getEntityName();
 
-    std::vector<std::pair<std::string, std::string> > &getTargets();
+    std::vector<TargetExpression*> &getTargets();
+    TargetExpression* getTarget(const std::string &columnName);
 
     WhereExpression &getWhereExpression();
 
@@ -53,16 +57,17 @@ public:
     bool isOrderBy = false;
     bool isLimit = false;
     bool isJoined = false;
+    bool isAggregated = false;
 
     std::vector<std::string> headers;
 
 protected:
     std::string entityName;
-    std::vector<std::pair<std::string, std::string> > targets;
+    std::vector<TargetExpression*> targets;
     WhereExpression whereExpression;
     std::vector<std::pair<std::string, std::string> > groupConditions;
     std::vector<std::pair<std::pair<std::string, std::string>, OrderType> > orderConditions;
-    std::pair<int, int> limitCondition;
+    std::pair<int, int> limitCondition = {1000000000, 0};
     std::vector<JoinExpression> listJoin;
 };
 

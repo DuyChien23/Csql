@@ -6,7 +6,6 @@
 #define WHERE_EXPRESSION_H
 #include "expression.h"
 
-
 class WhereExpression {
 public:
     explicit WhereExpression(Expression *_expression) : expression(_expression) {

@@ -114,6 +114,7 @@ static std::map<std::string, SqlKeywords> mSqlKeywords = {
 };
 
 enum class SqlFunctions {
+    // normal function
     ascii_ft,
     concat_ft, concat_ws_ft, char_length_ft, char_ft,
     length_ft, left_ft, locate_ft, lower_ft,
@@ -121,6 +122,11 @@ enum class SqlFunctions {
     replace_ft, right_ft, reverse_ft,
     insert_ft,
     trim_ft, upper_ft,
+
+    // aggregate function
+    count_ft, sum_ft, avg_ft, min_ft, max_ft, group_concat_ft,
+
+    //unknown function
     unknown_ft,
 };
 
@@ -142,6 +148,15 @@ static std::map<std::string, SqlFunctions> mSqlFunctions{
     std::make_pair("insert", SqlFunctions::insert_ft),
     std::make_pair("trim", SqlFunctions::trim_ft),
     std::make_pair("upper", SqlFunctions::upper_ft),
+};
+
+static std::map<std::string, SqlFunctions> mSqlAggregateFunctions{
+    std::make_pair("count", SqlFunctions::count_ft),
+    std::make_pair("sum", SqlFunctions::sum_ft),
+    std::make_pair("avg", SqlFunctions::avg_ft),
+    std::make_pair("min", SqlFunctions::min_ft),
+    std::make_pair("max", SqlFunctions::max_ft),
+    std::make_pair("group_concat", SqlFunctions::group_concat_ft),
 };
 
 enum class SqlOperators {

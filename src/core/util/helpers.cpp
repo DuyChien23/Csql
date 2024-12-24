@@ -47,6 +47,7 @@ DataTypes SqlTypeHandle::covertSqlValueToDataTypes(const SqlTypes &value) {
 }
 
 DataTypes SqlTypeHandle::covertStringToDataType(std::string type) {
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);
     if (type == "bool") return DataTypes::bool_type;
     if (type == "date") return DataTypes::datetime_type;
     if (type == "int") return DataTypes::int_type;

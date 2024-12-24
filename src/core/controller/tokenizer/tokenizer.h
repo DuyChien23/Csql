@@ -40,6 +40,8 @@ public:
 
     void tokenize();
 
+    std::string getStringUntil(std::string aData);
+
     [[nodiscard]] size_t size() const;
 
     Token *tokenAt(size_t anOffset);
@@ -77,19 +79,19 @@ public:
             if (peek()->type != TokenType::keyword) {
                 return result;
             }
-            return mSqlKeywords[peek()->data] == firstData || result;
+            return peek()->keyword == firstData || result;
         }
         if constexpr (std::is_same_v<T, SqlOperators>) {
             if (peek()->type != TokenType::operators) {
                 return result;
             }
-            return mSqlOperators[peek()->data] == firstData || result;
+            return peek()->op == firstData || result;
         }
         if constexpr (std::is_same_v<T, SqlFunctions>) {
             if (peek()->type != TokenType::function) {
                 return result;
             }
-            return mSqlFunctions[peek()->data] == firstData || result;
+            return peek()->function == firstData || result;
         }
         if constexpr (std::is_same_v<T, int>) {
             if (peek()->type != TokenType::number) {

@@ -14,11 +14,11 @@ public:
     };
 
     SqlTypes apply(const JoinedTuple &tuple) override {
-        if (attributeName.empty()) {
+        if (entityName.empty()) {
             int count = 0;
             SqlTypes result;
             for (auto &pair: tuple) {
-                if (pair.first.second == entityName) {
+                if (pair.first.second == attributeName) {
                     count++;
                     result = pair.second;
                 }
